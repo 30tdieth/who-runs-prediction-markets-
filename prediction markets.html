@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prediction markets benchmark — October 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF0EA; --card:#F7F8F4; --ink:#17202E; --muted:#596270; --line:#CDD2C7; --line-soft:#DFE3DA;
+  --yes:#2E6B57; --yes-soft:#D6E6DE; --amber:#9A720C; --amber-soft:#F1E5BF; --rose:#A63D4F; --rose-soft:#F1D9DD;
+  --slate:#6C7480; --slate-soft:#E1E4E6; --violet:#5A4E8C; --violet-soft:#E2DFF0;
+  --seg1:#17202E; --seg2:#2E6B57; --seg3:#7FA898; --seg4:#B98A12;
+  --focus:#3B6FD9;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131921; --card:#1A212B; --ink:#E6E9E2; --muted:#9CA5B0; --line:#2D3642; --line-soft:#232B36;
+    --yes:#62B697; --yes-soft:#1E3A31; --amber:#E2B84E; --amber-soft:#3A3018; --rose:#E28393; --rose-soft:#3E2229;
+    --slate:#9AA2AD; --slate-soft:#28303A; --violet:#AFA4E6; --violet-soft:#2B2742;
+    --seg1:#E6E9E2; --seg2:#62B697; --seg3:#3E7563; --seg4:#E2B84E; --focus:#7FA6FF;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131921; --card:#1A212B; --ink:#E6E9E2; --muted:#9CA5B0; --line:#2D3642; --line-soft:#232B36;
+  --yes:#62B697; --yes-soft:#1E3A31; --amber:#E2B84E; --amber-soft:#3A3018; --rose:#E28393; --rose-soft:#3E2229;
+  --slate:#9AA2AD; --slate-soft:#28303A; --violet:#AFA4E6; --violet-soft:#2B2742;
+  --seg1:#E6E9E2; --seg2:#62B697; --seg3:#3E7563; --seg4:#E2B84E; --focus:#7FA6FF;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Schibsted Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1360px;margin:0 auto;padding:40px 28px 64px}
+header.top{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;align-items:end;padding-bottom:36px;border-bottom:2px solid var(--ink)}
+h1{font-size:clamp(34px,4.6vw,60px);line-height:1.02;letter-spacing:-0.025em;font-weight:800;margin:0 0 18px;max-width:14ch}
+.lede{color:var(--muted);max-width:58ch;margin:0;font-size:17px}
+.snap{font-size:14px;color:var(--muted);margin-top:14px}
+.share h2{font-size:15px;font-weight:600;margin:0 0 12px}
+.bar{display:flex;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar span{display:flex;align-items:flex-end;padding:0 10px 8px;font-weight:700;font-size:20px;color:var(--paper);white-space:nowrap;overflow:hidden;transform-origin:left;animation:grow .9s cubic-bezier(.2,.7,.2,1) both}
+.bar span:nth-child(1){background:var(--seg1)}
+.bar span:nth-child(2){background:var(--seg2);animation-delay:.08s}
+.bar span:nth-child(3){background:var(--seg3);animation-delay:.16s;color:var(--ink)}
+.bar span:nth-child(4){background:var(--seg4);animation-delay:.24s;padding:0}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.bar span{animation:none}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0;padding:0;list-style:none;font-size:14px}
+.legend li{display:flex;align-items:center;gap:7px}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.caption{font-size:13px;color:var(--muted);margin:8px 0 0}
+.valos{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin-top:22px;border-top:1px solid var(--line)}
+.valos div{padding:10px 10px 0 0}
+.valos b{display:block;font-size:20px;letter-spacing:-0.01em}
+.valos small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
+
+section.reading{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;padding:30px 0;border-bottom:1px solid var(--line)}
+section.reading h3{font-size:16px;margin:0 0 6px;line-height:1.3}
+section.reading p{margin:0;color:var(--muted);font-size:14.5px}
+
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding:18px 0 14px;border-bottom:1px solid var(--line)}
+.cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cat{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;padding:7px 12px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.cat em{font-style:normal;color:var(--muted);font-size:12.5px}
+.cat[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.cat[aria-pressed="true"] em{color:inherit;opacity:.75}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search{flex:1 1 260px;min-width:200px;position:relative}
+.search input{width:100%;font:inherit;font-size:15px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+select{font:inherit;font-size:14px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.count{font-size:14px;color:var(--muted);margin-left:auto}
+.reset{font:inherit;font-size:14px;background:none;border:none;color:var(--ink);text-decoration:underline;cursor:pointer;padding:6px}
+
+.tablebox{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:1500px;font-size:14px}
+thead th{position:sticky;top:0;background:var(--card);text-align:left;font-weight:600;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);padding:0;white-space:nowrap}
+thead th button{all:unset;cursor:pointer;display:flex;gap:6px;align-items:center;padding:12px 12px;width:100%;box-sizing:border-box}
+thead th button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+thead th .arr{opacity:.35;font-size:11px}
+thead th[aria-sort="ascending"] .arr,thead th[aria-sort="descending"] .arr{opacity:1;color:var(--ink)}
+thead th span.nob{display:block;padding:12px}
+tbody td{padding:13px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tbody tr.main{cursor:pointer}
+tbody tr.main:hover td{background:color-mix(in srgb,var(--paper) 55%,var(--card))}
+td.name,th.name{position:sticky;left:0;background:var(--card);z-index:1;min-width:210px;max-width:230px;box-shadow:1px 0 0 var(--line-soft)}
+thead th.name{z-index:3}
+td.name strong{display:block;font-size:15px;line-height:1.25}
+td.name .cattag{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+td.name .tog{display:inline-block;margin-top:6px;font-size:12.5px;color:var(--muted);text-decoration:underline;text-underline-offset:2px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit}
+td.w-diff{min-width:300px;max-width:340px}
+td.w-mid{min-width:190px;max-width:230px}
+td.w-num{min-width:200px;max-width:240px}
+td.creator{min-width:170px;max-width:200px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.s-live{background:var(--yes-soft);color:var(--yes)}
+.s-partial{background:var(--amber-soft);color:var(--amber)}
+.s-announced{background:var(--rose-soft);color:var(--rose)}
+.s-pending{background:var(--violet-soft);color:var(--violet)}
+.s-rumor{background:transparent;color:var(--rose);box-shadow:inset 0 0 0 1px var(--rose)}
+.s-closed{background:var(--slate-soft);color:var(--slate)}
+.snote{display:block;color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.35;max-width:170px}
+.weight{display:flex;gap:3px;margin-bottom:5px}
+.weight i{width:12px;height:6px;border-radius:2px;background:var(--line)}
+.weight i.on{background:var(--ink)}
+.wlabel{font-size:12.5px;color:var(--muted)}
+tr.detail td{background:color-mix(in srgb,var(--paper) 40%,var(--card));padding:14px 16px 18px}
+tr.detail .dbox{position:sticky;left:16px;max-width:min(880px,calc(100vw - 80px))}
+tr.detail p{margin:0 0 6px;font-size:14.5px}
+tr.detail a{font-size:13.5px}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.empty button{font:inherit;color:var(--ink);background:none;border:none;text-decoration:underline;cursor:pointer}
+.nd{color:var(--muted)}
+
+footer{margin-top:40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:40px;font-size:14px;color:var(--muted)}
+footer h2{font-size:15px;color:var(--ink);margin:0 0 10px}
+footer ul{margin:0;padding-left:18px}
+footer li{margin-bottom:5px}
+footer p{margin:0 0 10px}
+.legendstatus{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+
+@media (max-width:980px){
+  header.top{grid-template-columns:1fr;gap:28px}
+  section.reading{grid-template-columns:repeat(2,minmax(0,1fr))}
+  footer{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .wrap{padding:24px 16px 48px}
+  section.reading{grid-template-columns:1fr;gap:18px}
+  .valos{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bar{height:52px}
+  .bar span{font-size:16px}
+  .controls{position:static}
+  .count{margin-left:0;width:100%}
+}
+.topbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:18px}
+.topbar label{font-size:13.5px;color:var(--muted)}
+.topbar select{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <label for="lang" data-i18n="langLabel">Language</label>
+  <select id="lang">
+    <option value="en">English</option>
+    <option value="fr">Français</option>
+  </select>
+</div>
+
+<header class="top">
+  <div>
+    <h1 data-i18n="h1">Who runs prediction markets in October 2026</h1>
+    <p class="lede" data-i18n="lede"></p>
+    <p class="snap" data-i18n="snap"></p>
+  </div>
+  <div class="share">
+    <h2 data-i18n="shareTitle"></h2>
+    <div class="bar" role="img" id="bar">
+      <span style="flex:80" class="p80"></span><span style="flex:12" class="p12"></span><span style="flex:6" class="p6"></span><span style="flex:2"></span>
+    </div>
+    <ul class="legend">
+      <li><i style="background:var(--seg1)"></i>Kalshi</li>
+      <li><i style="background:var(--seg2)"></i>Polymarket US</li>
+      <li><i style="background:var(--seg3)"></i>Polymarket International</li>
+      <li><i style="background:var(--seg4)"></i><span class="novig"></span></li>
+    </ul>
+    <p class="caption" data-i18n="caption"></p>
+    <div class="valos" id="valos"></div>
+  </div>
+</header>
+
+<section class="reading" id="reading"></section>
+
+<div class="controls">
+  <div class="cats" id="cats" role="group"></div>
+  <div class="row2">
+    <div class="search"><input id="q" type="search"></div>
+    <select id="fstatus"></select>
+    <select id="freg"></select>
+    <button class="reset" id="reset" type="button" data-i18n="reset"></button>
+    <span class="count" id="count" aria-live="polite"></span>
+  </div>
+</div>
+
+<div class="tablebox">
+<table id="tbl">
+  <thead>
+    <tr>
+      <th class="name" data-k="name"><button type="button"><span data-i18n="thName"></span> <span class="arr">▲▼</span></button></th>
+      <th data-k="status"><button type="button"><span data-i18n="thStatus"></span> <span class="arr">▲▼</span></button></th>
+      <th data-k="weight"><button type="button"><span data-i18n="thWeight"></span> <span class="arr">▲▼</span></button></th>
+      <th data-k="creator"><button type="button"><span data-i18n="thCreator"></span> <span class="arr">▲▼</span></button></th>
+      <th><span class="nob" data-i18n="thDiff"></span></th>
+      <th data-k="reg"><button type="button"><span data-i18n="thReg"></span> <span class="arr">▲▼</span></button></th>
+      <th data-k="chain"><button type="button"><span data-i18n="thChain"></span> <span class="arr">▲▼</span></button></th>
+      <th><span class="nob" data-i18n="thModel"></span></th>
+      <th><span class="nob" data-i18n="thVol"></span></th>
+      <th><span class="nob" data-i18n="thFund"></span></th>
+    </tr>
+  </thead>
+  <tbody id="tb"></tbody>
+</table>
+</div>
+
+<footer>
+  <div>
+    <h2 data-i18n="howTitle"></h2>
+    <p data-i18n="how1"></p>
+    <p data-i18n="how2"></p>
+    <div class="legendstatus" id="legendstatus"></div>
+  </div>
+  <div>
+    <h2 data-i18n="srcTitle"></h2>
+    <ul id="sources"></ul>
+  </div>
+</footer>
+</div>
+
+<script>
+const I18N = {
+ en:{
+  title:"Prediction markets benchmark — October 2026",
+  langLabel:"Language",
+  h1:"Who runs prediction markets in October 2026",
+  lede:"56 players: dedicated platforms, on-chain protocols, crypto exchanges, brokers, sportsbooks, wallets and infrastructure. Filter by category or status, sort the columns, and open a row to read the context.",
+  snap:"Data collected on October 4, 2026. Volume figures are not consistent from one source to another: the period and method are stated in each cell.",
+  shareTitle:"Share of volume across the 4 venues tracked by DeFi Rate (Sept. 2 – Oct. 1, 2026)",
+  barLabel:"Kalshi 80%, Polymarket US 12%, Polymarket International 6%, Novig 2%",
+  pct:["80%","12%","6%"], novig:"Novig 2%",
+  caption:"Kalshi traded $60.7B in contracts in September 2026, a record. On-chain venues other than Polymarket account for a few percent at most.",
+  valos:[["~$40B","Kalshi, round being finalized"],["$21B","Polymarket, Sept. 2026"],["$5B","OG.com, Sept. 2026"],["~$2B","Novig, round in talks"],["$1.3B","Underdog, IG acquisition"]],
+  valosLabel:"Latest known valuations",
+  reading:[
+   ["One clear leader, driven by sports","Kalshi captures about 80% of tracked volume; sports make up over 80% of its activity. Polymarket remains the on-chain and media benchmark, but its international volume is shrinking in favor of its US version."],
+   ["A license is no longer a moat","Everyone is buying or obtaining a DCM/DCO: Polymarket (QCEX), DraftKings (Railbird), Underdog (Aristotle), Fanatics (BGC), Robinhood (Rothera). Novig and ProphetX were approved within months."],
+   ["The fight is over distribution","Brokers and wallets are becoming aggregators: Robinhood routes to 4 exchanges; Jupiter, Trust Wallet and Binance Wallet combine several venues. The product is commoditizing; customer access makes the difference."],
+   ["On-chain: Hyperliquid and the BNB cluster","HIP-4 has been permissionless since late August; predict.fun and Opinion lead on BNB Chain. TradFi is coming in through financial products (Cboe, CME, Schwab), far from sports and politics."]],
+  readingLabel:"Market reading",
+  catsLabel:"Filter by category", all:"All",
+  search:"Search a platform, a company, a chain…", searchLabel:"Search",
+  statusAll:"All statuses", statusLabel:"Filter by status",
+  statusOpts:{live:"Live",partial:"Partial or beta",pending:"Awaiting approval",announced:"Announced, not yet launched",rumor:"In development, unofficial",closed:"Closed or absorbed"},
+  regAll:"All regulations", regLabel:"Filter by regulation",
+  regOpts:{cftc:"CFTC (US)",sec:"SEC (US options)",offshore:"Offshore or other license",defi:"None (DeFi)",na:"Not applicable"},
+  reset:"Reset",
+  thName:"Platform",thStatus:"Status",thWeight:"Market weight",thCreator:"Creator / parent company",thDiff:"Point of differentiation",
+  thReg:"Regulatory status",thChain:"Blockchain / rails",thModel:"Market model and resolution",thVol:"Volume, open interest, traction",thFund:"Funding and valuation",
+  count:(n,t)=>`${n} player${n>1?"s":""} shown out of ${t}`,
+  empty:"No player matches these filters.", clear:"Reset filters",
+  show:"Show context", hide:"Hide context", noMore:"No additional information.", open:n=>`Open the ${n} website`,
+  howTitle:"How to read this table",
+  how1:"“Weight” is an analyst's judgment (1 to 5 bars) combining volume, distribution and influence; it is meant for sorting, not measuring.",
+  how2:"“n/a” means no reliable figure was found. Contract (notional) volumes overstate the money actually committed, especially on parlays.",
+  srcTitle:"Main sources",
+  sources:["DeFi Rate — Kalshi volumes and market share","DeFi Rate — Polymarket volumes","The Paypers — Kalshi at ~$40B","Wu Blockchain — Polymarket at $21B","Covers — Robinhood × OG.com","Bankless — HIP-4 goes permissionless","Datawallet — HIP-4 explained","Covers — IG Group acquires Underdog","Cboe — Cboe Predicts launch","Legal Sports Report — Meta's “Arena” project","Dropstab — on-chain venue volumes","DefiLlama — Prediction Markets category","Kairos — directory of tools and terminals"],
+  cats:{pure:"Dedicated regulated platform",onchain:"On-chain protocol",crypto:"Crypto exchange (segment)",broker:"Broker and TradFi exchange",sport:"Sportsbook, DFS and media",wallet:"Wallet and aggregator",infra:"Infra, oracle and data"},
+  status:{live:"Live",partial:"Partial or beta",pending:"Awaiting approval",announced:"Announced",rumor:"Unofficial",closed:"Closed or absorbed"},
+  weight:{5:"Leader",4:"Major",3:"Significant",2:"Challenger",1:"Niche or pre-launch"}
+ },
+ fr:{
+  title:"Benchmark des marchés prédictifs — octobre 2026",
+  langLabel:"Langue",
+  h1:"Qui fait les marchés prédictifs en octobre 2026",
+  lede:"56 acteurs : plateformes dédiées, protocoles on-chain, exchanges crypto, brokers, sportsbooks, wallets et briques d’infrastructure. Filtrez par catégorie ou statut, triez les colonnes, et ouvrez une ligne pour lire le contexte.",
+  snap:"Données relevées le 4 octobre 2026. Les chiffres de volume ne sont pas homogènes d’une source à l’autre : la période et la méthode sont indiquées dans chaque cellule.",
+  shareTitle:"Part du volume sur les 4 venues suivies par DeFi Rate (2 sept. – 1er oct. 2026)",
+  barLabel:"Kalshi 80 %, Polymarket US 12 %, Polymarket International 6 %, Novig 2 %",
+  pct:["80 %","12 %","6 %"], novig:"Novig 2 %",
+  caption:"Kalshi a traité 60,7 Md$ de contrats en septembre 2026, son record. Les venues on-chain hors Polymarket pèsent quelques pourcents au plus.",
+  valos:[["~40 Md$","Kalshi, tour en finalisation"],["21 Md$","Polymarket, sept. 2026"],["5 Md$","OG.com, sept. 2026"],["~2 Md$","Novig, tour en discussion"],["1,3 Md$","Underdog, rachat par IG"]],
+  valosLabel:"Dernières valorisations connues",
+  reading:[
+   ["Un leader net, porté par le sport","Kalshi capte environ 80 % du volume suivi ; le sport représente plus de 80 % de son activité. Polymarket reste la référence on-chain et médiatique, mais son volume international recule au profit de sa version US."],
+   ["La licence n’est plus un fossé","Chacun achète ou obtient son DCM/DCO : Polymarket (QCEX), DraftKings (Railbird), Underdog (Aristotle), Fanatics (BGC), Robinhood (Rothera). Novig et ProphetX ont été agréés en quelques mois."],
+   ["La bataille se joue sur la distribution","Brokers et wallets deviennent des agrégateurs : Robinhood route vers 4 exchanges, Jupiter, Trust Wallet et Binance Wallet combinent plusieurs venues. Le produit se banalise, l’accès client fait la différence."],
+   ["On-chain : Hyperliquid et le cluster BNB","HIP-4 est permissionless depuis fin août ; predict.fun et Opinion dominent BNB Chain. La TradFi arrive par les produits financiers (Cboe, CME, Schwab), loin du sport et de la politique."]],
+  readingLabel:"Lecture du marché",
+  catsLabel:"Filtrer par catégorie", all:"Tous",
+  search:"Rechercher une plateforme, une entreprise, une chaîne…", searchLabel:"Rechercher",
+  statusAll:"Tous les statuts", statusLabel:"Filtrer par statut",
+  statusOpts:{live:"Live",partial:"Partiel ou bêta",pending:"En attente d’agrément",announced:"Annoncé, pas encore sorti",rumor:"En développement, non officiel",closed:"Fermé ou absorbé"},
+  regAll:"Toutes les régulations", regLabel:"Filtrer par régulation",
+  regOpts:{cftc:"CFTC (US)",sec:"SEC (options US)",offshore:"Offshore ou autre licence",defi:"Aucune (DeFi)",na:"Non applicable"},
+  reset:"Réinitialiser",
+  thName:"Plateforme",thStatus:"Statut",thWeight:"Poids dans le marché",thCreator:"Créateur / maison-mère",thDiff:"Point de différenciation",
+  thReg:"Statut réglementaire",thChain:"Blockchain / rails",thModel:"Modèle de marché et résolution",thVol:"Volume, open interest, traction",thFund:"Levées et valorisation",
+  count:(n,t)=>`${n} acteur${n>1?"s":""} affiché${n>1?"s":""} sur ${t}`,
+  empty:"Aucun acteur ne correspond à ces filtres.", clear:"Réinitialiser les filtres",
+  show:"Voir le contexte", hide:"Masquer le contexte", noMore:"Pas d’information complémentaire.", open:n=>`Ouvrir le site de ${n}`,
+  howTitle:"Comment lire ce tableau",
+  how1:"Le « poids » est une appréciation d’analyste (1 à 5 barres) qui combine volume, distribution et capacité d’influence ; il sert à trier, pas à mesurer.",
+  how2:"« n.d. » signifie qu’aucun chiffre fiable n’a été trouvé. Les volumes de contrats (notionnel) surestiment l’argent réellement engagé, surtout sur les combinés.",
+  srcTitle:"Principales sources",
+  sources:["DeFi Rate — volumes Kalshi et parts de marché","DeFi Rate — volumes Polymarket","The Paypers — Kalshi à ~40 Md$","Wu Blockchain — Polymarket à 21 Md$","Covers — Robinhood × OG.com","Bankless — HIP-4 permissionless","Datawallet — HIP-4 expliqué","Covers — IG Group rachète Underdog","Cboe — lancement de Cboe Predicts","Legal Sports Report — projet Meta « Arena »","Dropstab — volumes des venues on-chain","DefiLlama — catégorie Prediction Markets","Kairos — annuaire des outils et terminaux"],
+  cats:{pure:"Plateforme dédiée régulée",onchain:"Protocole on-chain",crypto:"Exchange crypto (segment)",broker:"Broker et bourse TradFi",sport:"Sportsbook, DFS et média",wallet:"Wallet et agrégateur",infra:"Infra, oracle et data"},
+  status:{live:"Live",partial:"Partiel ou bêta",pending:"En attente d’agrément",announced:"Annoncé",rumor:"Non officiel",closed:"Fermé ou absorbé"},
+  weight:{5:"Leader",4:"Majeur",3:"Significatif",2:"Challenger",1:"Niche ou pré-lancement"}
+ }
+};
+const SOURCE_URLS = [
+ "https://defirate.com/prediction-markets/volume/kalshi/",
+ "https://defirate.com/prediction-markets/volume/polymarket/",
+ "https://thepaypers.com/crypto-web3-and-cbdc/news/kalshi-nears-usd-40-bln-valuation-in-funding-round-ahead-of-ipo",
+ "https://wublock.substack.com/p/september-vc-report-crypto-vc-funding",
+ "https://www.covers.com/industry/robinhood-expands-prediction-market-access-with-og-com-partnership-sept-8-2026",
+ "https://www.bankless.com/read/hyperliquid-s-hip-4-era",
+ "https://www.datawallet.com/crypto/hip-4-explained-hyperliquid-upgrade",
+ "https://www.covers.com/industry/ig-group-to-buy-underdog-expand-us-prediction-market-push-july-30-2026",
+ "https://ir.cboe.com/news/news-details/2026/Cboe-Introduces-Cboe-Predicts-Launching-First-Products-in-New-Prediction-Markets-Suite/default.aspx",
+ "https://www.legalsportsreport.com/?p=267622",
+ "https://news.dropstab.com/research/crypto-prediction-markets-a-new-trend",
+ "https://defillama.com/protocols/prediction-market",
+ "https://github.com/kairoslive/prediction-market-trading-tools-and-terminals"
+];
+const STATUS_META = {live:["s-live",1],partial:["s-partial",2],pending:["s-pending",3],announced:["s-announced",4],rumor:["s-rumor",5],closed:["s-closed",6]};
+const D = [
+{n:"Kalshi",c:"pure",s:"live",w:5,cr:"Kalshi Inc. — Tarek Mansour et Luana Lopes Lara (2018)",
+ d:"Premier exchange régulé CFTC dédié aux event contracts ; leader mondial en volume, tiré par le sport (plus de 80 % de son volume) et par une distribution massive (Robinhood, Coinbase, Webull, Phantom, Jupiter).",
+ r:"CFTC — DCM + DCO (Kalshi Klear)",rg:"cftc",ch:"Off-chain (USD) ; positions tokenisées sur Solana via DFlow et Jupiter",
+ m:"Carnet d’ordres central avec market makers ; résolution par l’exchange selon les règles du contrat",
+ v:"60,7 Md$ de contrats en sept. 2026 (record) ; 244,5 Md$ depuis janvier ; ~80 % du volume suivi",
+ f:"Série F 1 Md$ à 22 Md$ (mai 2026) ; tour à ~40 Md$ en finalisation (oct. 2026) ; revenus annualisés ~4 Md$ (août 2026)",
+ x:"A lancé des perpétuels crypto en avril 2026. IPO envisagée pour 2027. Contentieux avec plusieurs États : le 6e circuit a jugé en sept. 2026 que l’Ohio et le Tennessee peuvent réguler ses contrats sportifs.",u:"https://kalshi.com"},
+{n:"Polymarket (International)",c:"onchain",s:"live",w:5,cr:"Polymarket / Blockratize Inc. — Shayne Coplan (2020)",
+ d:"Référence on-chain et auto-custodiale, très forte sur politique, géopolitique et crypto ; ses cotes sont reprises par les médias et la finance (ICE, Google Finance).",
+ r:"Offshore (hors US)",rg:"offshore",ch:"Polygon ; collatéral pUSD adossé 1:1 à l’USDC depuis avril 2026",
+ m:"Carnet d’ordres hybride (matching off-chain, règlement on-chain via Conditional Tokens) ; oracle optimiste UMA",
+ v:"4,6 Md$ en sept. 2026 ; ~6 % du volume suivi",
+ f:"1 Md$ à 21 Md$ post-money mené par 1789 Capital (sept. 2026) ; ICE détient une position d’environ 1,6 Md$",
+ x:"Token POLY et airdrop confirmés par la direction, sans date. Rachats : QCEX (licence US) et Dome (API multi-venues). Distribution via MetaMask, Trust Wallet, Jupiter.",u:"https://polymarket.com"},
+{n:"Polymarket US",c:"pure",s:"live",w:4,cr:"QCX LLC (filiale de Polymarket)",
+ d:"Version régulée US relancée en décembre 2025, orientée sport ; les combinés font plus de la moitié de son volume.",
+ r:"CFTC — DCM + DCO (ex-QCEX, racheté 112 M$)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres central ; combinés",
+ v:"≈2,8 Md$ la semaine du 21 au 27 sept. 2026 ; 12 à 15 % du volume suivi",
+ f:"Voir Polymarket",
+ x:"Poursuivi par l’État de New York. Recrutement de Lisa Mantil (ex-Goldman Sachs) pour attirer les flux institutionnels et les blocs.",u:"https://polymarket.us"},
+{n:"OG.com",c:"pure",s:"live",w:4,cr:"Crypto.com (Kris Marszalek) — spin-off indépendant, CEO Nick Lundgren",
+ d:"Exchange et chambre de compensation en marque blanche : alimente Fanatics Markets, Truth Predict, High Roller, Prospect Markets et une partie des flux Robinhood.",
+ r:"CFTC — DCM + DCO (CDNA, ex-Nadex)",rg:"cftc",ch:"Off-chain ; dépôts crypto possibles",
+ m:"Carnet d’ordres central ; contrats listés par l’exchange",
+ v:"Plus gros partenariat B2B du secteur avec Robinhood (football US, sept. 2026)",
+ f:"Valorisé 5 Md$ lors de l’entrée de Robinhood au capital (sept. 2026) ; Crypto.com valorisé 20 Md$",
+ x:"Lancé le 3 février 2026. Vise ensuite les futures et les perpétuels.",u:"https://og.com"},
+{n:"Novig",c:"pure",s:"live",w:3,cr:"Novig Inc. (New York)",
+ d:"Exchange sport peer-to-peer à frais réduits, passé du modèle sweepstakes au cadre fédéral.",
+ r:"CFTC — DCM via Ludlow Exchange (juin 2026)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres P2P, sans contrepartie « maison »",
+ v:"~2 % du volume suivi par DeFi Rate (sept. 2026)",
+ f:"Série B 75 M$ à 500 M$ (2026) ; nouveau tour visé à ~2 Md$ (oct. 2026)",
+ x:"Fait partie des premiers DCM sportifs agréés en 2026 avec ProphetX.",u:"https://novig.us"},
+{n:"ProphetX",c:"pure",s:"live",w:2,cr:"ProphetX — Dean Sisun et Jake Benzaquen",
+ d:"Exchange 100 % sport avec clearing intégré et combinés négociés en RFQ entre contreparties.",
+ r:"CFTC — DCM + DCO (juin 2026)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres + mécanisme RFQ pour les parlays",
+ v:"n.d.",f:"n.d.",
+ x:"Lancé cinq jours après son agrément, le délai le plus court de l’ère CFTC.",u:"https://prophetx.co"},
+{n:"PredictIt",c:"pure",s:"live",w:2,cr:"Aristotle Inc. — John Phillips",
+ d:"Marché politique historique (2014) sous cadre académique, avec plafonds de mise par contrat ; pas de sport.",
+ r:"CFTC — lettre de no-action (cadre de recherche)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres, plafonds de position",
+ v:"n.d.",f:"n.d.",
+ x:"L’exchange Aristotle (DCM/DCO) a été vendu à Underdog en mars 2026 ; PredictIt reste chez Aristotle et continue à l’identique.",u:"https://www.predictit.org"},
+{n:"Sporttrade",c:"pure",s:"pending",w:1,cr:"Sporttrade (US)",
+ sn:"Demande de DCM déposée début 2026",
+ d:"Ancien exchange de paris sous licence d’État qui bascule vers un exchange sportif fédéral.",
+ r:"CFTC — DCM en cours d’instruction",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Exchange sportif à carnet d’ordres",
+ v:"n.d.",f:"n.d.",x:"D’autres demandes sportives sont aussi en attente, dont RSBIX.",u:""},
+
+{n:"Hyperliquid — HIP-4 (Outcomes)",c:"crypto",s:"live",w:3,cr:"Hyperliquid Labs — Jeff Yan",
+ d:"Outcome markets intégrés au moteur HyperCore : même compte et même marge que les perps, liquidité existante, et déploiement permissionless contre 500 000 HYPE stakés.",
+ r:"Aucune (DeFi, accès mondial)",rg:"defi",ch:"Hyperliquid L1 (HyperCore) ; règlement en USDC (USDH prévu)",
+ m:"Carnet d’ordres on-chain, contrats entièrement collatéralisés sans levier ; résolution par les validateurs sur sources objectives, via 7 templates approuvés (prix, décisions de taux)",
+ v:"~100 M$ le premier mois complet ; près de 1 000 marchés suivis (sept. 2026)",
+ f:"Pas de levée externe",
+ x:"Annoncé le 2 février 2026, mainnet le 2 mai, multi-outcomes le 7 mai, permissionless fin août 2026. Gratuit jusqu’à fin août. Premier déployeur tiers : Outcome.",u:"https://app.hyperliquid.xyz"},
+{n:"Coinbase Prediction Markets",c:"crypto",s:"live",w:3,cr:"Coinbase Global — Brian Armstrong",
+ d:"Prédictions intégrées à l’« everything exchange », financées en USD ou en USDC ; donne accès à tous les marchés Kalshi.",
+ r:"Via Kalshi (DCM) ; Coinbase Financial Markets",rg:"cftc",ch:"Off-chain ; financement USDC possible",
+ m:"Routage vers Kalshi ; d’autres venues annoncées",
+ v:"n.d.",f:"A racheté The Clearing Company (fondée par Toni Gemayel, ex-Polymarket et Kalshi) fin 2025",
+ x:"Disponible dans les 50 États depuis le 28 janvier 2026.",u:"https://www.coinbase.com"},
+{n:"Gemini Predictions",c:"crypto",s:"live",w:2,cr:"Gemini Space Station — Tyler et Cameron Winklevoss",
+ d:"Exchange propre et pari stratégique central : Gemini a quitté le Royaume-Uni, l’UE et l’Australie pour se concentrer sur les prédictions aux US ; fil personnalisé par IA (Grok).",
+ r:"CFTC — DCM (Gemini Titan)",rg:"cftc",ch:"Off-chain",
+ m:"Carnet d’ordres central",
+ v:"0,4 M$ de revenus et ~20 000 utilisateurs au T1 2026",f:"Société cotée (Nasdaq : GEMI)",
+ x:"Lancé mi-décembre 2025.",u:"https://www.gemini.com"},
+{n:"Kraken",c:"crypto",s:"announced",w:1,cr:"Kraken (Payward Inc.)",
+ sn:"Lancement annoncé pour 2026 ; aucun lancement confirmé trouvé au 4 oct.",
+ d:"Brique prévue dans la stratégie multi-actifs de Kraken, à côté des actions tokenisées xStocks.",
+ r:"À préciser",rg:"na",ch:"À préciser",m:"À préciser",v:"—",f:"n.d.",
+ x:"Kraken est sponsor officiel de la Coupe du monde 2026 côté crypto.",u:""},
+
+{n:"Robinhood Prediction Markets",c:"broker",s:"live",w:5,cr:"Robinhood Markets — Vlad Tenev",
+ d:"Hub multi-venues qui route chaque contrat vers Kalshi, ForecastEx, Rothera (sa coentreprise) ou OG.com selon la disponibilité ; énorme base de clients retail.",
+ r:"FCM ; exchange Rothera (JV avec Susquehanna) DCM + DCO live depuis juin 2026",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Smart routing entre exchanges",
+ v:"156 M$ de revenus « event contracts » au T2 2026 ; 2e venue US par volume régulé",
+ f:"Société cotée (HOOD) ; participations dans Crypto.com et OG.com (sept. 2026)",
+ x:"Les prédictions sont le segment à la plus forte croissance du groupe selon son CEO.",u:"https://robinhood.com"},
+{n:"Interactive Brokers — ForecastEx",c:"broker",s:"live",w:3,cr:"Interactive Brokers — Thomas Peterffy",
+ d:"Exchange propre orienté macro, économie et climat ; IBKR distribue aussi les contrats Cboe Predicts.",
+ r:"CFTC — DCM + DCO",rg:"cftc",ch:"Off-chain (USD)",m:"Carnet d’ordres central",
+ v:"n.d.",f:"Société cotée (IBKR)",x:"ForecastEx fait partie des venues routées par Robinhood.",u:"https://forecastex.com"},
+{n:"Cboe Predicts",c:"broker",s:"live",w:2,cr:"Cboe Global Markets",
+ d:"Binaires sur le Mini-S&P 500 (XSP) sous le régime des options listées, compensés par l’OCC : la seule offre qui échappe à la CFTC.",
+ r:"SEC (options listées), compensation OCC",rg:"sec",ch:"Off-chain (USD)",
+ m:"Options binaires avec paiement fixe, et variante « Plus Zone » à paiement partiel",
+ v:"n.d.",f:"Société cotée (CBOE)",
+ x:"Lancé le 23 juin 2026 sur Interactive Brokers ; Schwab et d’autres brokers doivent suivre.",u:"https://www.cboe.com"},
+{n:"Charles Schwab",c:"broker",s:"announced",w:1,cr:"Charles Schwab Corp.",
+ sn:"Annoncé en juin 2026 « dans les prochains mois »",
+ d:"Uniquement des événements financiers objectivement vérifiables (S&P 500) : ni sport, ni politique.",
+ r:"SEC (via Cboe)",rg:"sec",ch:"Off-chain",m:"Distribution des contrats Cboe",
+ v:"—",f:"Société cotée (SCHW)",x:"39,5 M de comptes actifs à distribuer en cas de lancement.",u:""},
+{n:"CME Group — event contracts",c:"broker",s:"live",w:3,cr:"CME Group",
+ d:"La plus grande bourse de dérivés liste des event contracts et fournit ceux de FanDuel Predicts.",
+ r:"CFTC — DCM + DCO",rg:"cftc",ch:"Off-chain (USD)",m:"Contrats listés par CME, carnet d’ordres",
+ v:"n.d.",f:"Société cotée (CME)",x:"Partenaire exclusif de FanDuel (Flutter).",u:"https://www.cmegroup.com"},
+{n:"ICE (Intercontinental Exchange)",c:"broker",s:"live",w:3,cr:"Intercontinental Exchange (maison-mère du NYSE)",
+ d:"Pas de plateforme propre : actionnaire majeur de Polymarket et distributeur de ses données aux institutionnels.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",
+ f:"Position d’environ 1,6 Md$ dans Polymarket",x:"Illustre l’arrivée des grandes bourses par la donnée plutôt que par le trading.",u:"https://www.ice.com"},
+{n:"tastytrade",c:"broker",s:"live",w:1,cr:"IG Group",
+ d:"Accès aux prédictions pour une clientèle de traders d’options actifs.",
+ r:"Via un DCM partenaire",rg:"cftc",ch:"Off-chain",m:"Distribution",v:"n.d.",f:"Filiale d’IG Group",
+ x:"Lancé fin juillet 2026, trois jours avant l’annonce du rachat d’Underdog par IG.",u:"https://tastytrade.com"},
+{n:"Webull",c:"broker",s:"live",w:1,cr:"Webull Corp.",
+ d:"Event contracts Kalshi intégrés à l’app de courtage retail.",
+ r:"Via Kalshi (DCM)",rg:"cftc",ch:"Off-chain",m:"Routage vers Kalshi",v:"n.d.",f:"Société cotée (BULL)",x:"",u:""},
+{n:"Wealthsimple",c:"broker",s:"announced",w:1,cr:"Wealthsimple (Canada)",
+ sn:"Partenariat annoncé avec Kalshi, lancement à confirmer",
+ d:"Porte d’entrée canadienne : environ 4 000 contrats Kalshi pour les investisseurs particuliers.",
+ r:"Canada (via Kalshi)",rg:"offshore",ch:"Off-chain",m:"Routage vers Kalshi",v:"—",f:"n.d.",x:"",u:""},
+
+{n:"DraftKings Predictions",c:"sport",s:"live",w:3,cr:"DraftKings Inc.",
+ d:"Exchange propre DKeX (issu du rachat de Railbird) intégré à l’app ; DraftKings agit aussi comme market maker.",
+ r:"CFTC — DCM (DKeX) ; introducing broker NFA",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres, avec le groupe comme teneur de marché",
+ v:"Volume par client supérieur au handle sportsbook par client (avril 2026, JPMorgan)",f:"~300 M$ de marketing prédictions prévus en 2026",
+ x:"Les contrats sportifs sont retirés dans les États où le sportsbook DraftKings opère. DKeX live depuis juin 2026.",u:"https://predictions.draftkings.com"},
+{n:"FanDuel Predicts",c:"sport",s:"live",w:3,cr:"Flutter Entertainment (avec CME Group)",
+ d:"App séparée du sportsbook, contrats listés par CME ; sport uniquement là où le pari sportif en ligne n’est pas légal, et pas de politique.",
+ r:"CFTC via CME ; FanDuel Prediction Markets LLC (FCM)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Contrats CME ; FanDuel est aussi market maker",
+ v:"n.d.",f:"~300 M$ de marketing prédictions prévus en 2026",
+ x:"Lancé en décembre 2025. Présent dans les 50 États et Porto Rico.",u:"https://predicts.fanduel.com"},
+{n:"Fanatics Markets",c:"sport",s:"live",w:2,cr:"Fanatics — Michael Rubin",
+ d:"Marque grand public du merchandising sportif, prix et liquidité fournis par CDNA (Crypto.com) ; rachat en cours d’un exchange et d’une chambre de compensation à BGC Group.",
+ r:"Introducing broker NFA (ex-Paragon) ; DCM via CDNA",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Distribution des contrats CDNA",
+ v:"Live dans 23 États et 4 territoires",f:"Acquisition d’exchange BGC annoncée en juillet 2026",
+ x:"Partenariat Coupe du monde avec ADI Predictstreet.",u:"https://fanaticsmarkets.com"},
+{n:"Underdog Predict",c:"sport",s:"live",w:3,cr:"Underdog — Jeremy Levine (en cours de rachat par IG Group)",
+ d:"3e venue US par volume régulé ; exchange propre depuis le 18 juillet 2026 ; mélange DFS et prédictions dans les combinés.",
+ r:"CFTC — DCM + DCO (ex-Aristotle Exchange) ; FCM",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres et combos",
+ v:"466 M$ de revenus nets sur 12 mois à fin juin 2026 (surtout DFS)",
+ f:"Rachat par IG Group jusqu’à 1,3 Md$ (annoncé le 30 juillet 2026)",
+ x:"S’appuyait auparavant sur Crypto.com puis Kalshi.",u:"https://underdogfantasy.com"},
+{n:"PrizePicks Predictions",c:"sport",s:"live",w:2,cr:"PrizePicks",
+ d:"Prédictions intégrées à l’app de fantasy sport ; distribue des contrats d’exchanges tiers (Kalshi, Polymarket).",
+ r:"FCM enregistré NFA",rg:"cftc",ch:"Off-chain",m:"Distribution",v:"n.d.",f:"n.d.",x:"",u:"https://www.prizepicks.com"},
+{n:"Truth Predict",c:"sport",s:"partial",w:1,cr:"Trump Media & Technology Group",
+ sn:"En bêta depuis février 2026, pas de lancement large",
+ d:"Prédictions intégrées au réseau social Truth Social ; les « gems » gagnés sur la plateforme sont convertibles en CRO.",
+ r:"CFTC via CDNA (Crypto.com)",rg:"cftc",ch:"Off-chain ; CRO",m:"Distribution des contrats CDNA",
+ v:"—",f:"Société cotée (DJT)",x:"Annoncé le 28 octobre 2025.",u:""},
+{n:"Meta « Arena »",c:"sport",s:"rumor",w:1,cr:"Meta Platforms",
+ sn:"Projet révélé par le New York Times (juin 2026), non confirmé par Meta",
+ d:"App autonome qui puiserait dans l’audience de Facebook et Instagram ; probablement en points au départ, argent réel non exclu.",
+ r:"À préciser",rg:"na",ch:"—",m:"—",v:"—",f:"—",
+ x:"Meta avait fermé en 2022 une première app de prévision, Forecast.",u:""},
+
+{n:"predict.fun",c:"onchain",s:"live",w:3,cr:"predict.fun (fondateur : dingaling) — soutenu par YZi Labs",
+ d:"Collatéral rémunéré (les USDT déposés sont placés sur Venus) et distribution via Binance Wallet et Trust Wallet.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"BNB Chain (+ Blast)",
+ m:"Carnet d’ordres ; frais taker prélevés au règlement",
+ v:"1,7 Md$ cumulés et 125 000 utilisateurs (printemps 2026) ; 579 M$ de volume taker en avril",
+ f:"Investissement renforcé de YZi Labs ; rachat de Probable (incubé par PancakeSwap) en mars 2026",
+ x:"Probable, lancé par PancakeSwap et YZi Labs fin 2025 (zéro frais, oracle UMA), est désormais intégré à predict.fun.",u:"https://predict.fun"},
+{n:"Opinion (Opinion Labs)",c:"onchain",s:"live",w:3,cr:"Opinion Labs — soutenu par YZi Labs",
+ d:"Positionnement « macro-first » (taux, matières premières) plutôt que divertissement ; résolution assistée par IA.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"BNB Chain",
+ m:"Carnet d’ordres ; oracle assisté par IA",
+ v:"3,1 Md$ de notionnel cumulé en 3 semaines après le lancement (oct.–nov. 2025) ; 376 M$ de volume taker en avril 2026",
+ f:"Pré-série A de 20 M$ (février 2026 : Hack VC, Jump Crypto, Primitive Ventures)",
+ x:"Mainnet lancé le 24 octobre 2025.",u:"https://opinion.trade"},
+{n:"Limitless",c:"onchain",s:"live",w:2,cr:"Limitless Labs",
+ d:"Marchés ultra-courts (minutes, heures) sur les prix crypto, réglés sur une moyenne Chainlink plutôt qu’un prix spot ; premier acteur sur Base.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Base",
+ m:"Carnet d’ordres + AMM ; oracle Chainlink (TWAP)",
+ v:"205 M$ de volume taker en avril 2026",f:"n.d.",x:"Zéro frais maker.",u:"https://limitless.exchange"},
+{n:"Myriad Markets",c:"onchain",s:"live",w:2,cr:"Dastan (maison-mère de Decrypt)",
+ d:"Marchés « media-native » intégrés aux articles et aux apps ; premier fournisseur choisi par Trust Wallet.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Abstract, BNB Chain, Linea",
+ m:"Carnet d’ordres + AMM ; oracles Chainlink",
+ v:"100 M$ de volume cumulé et plus de 400 000 traders",
+ f:"Soutiens : MoonPay Ventures, Tom Lee, ConsenSys, Hack VC",x:"",u:"https://myriad.markets"},
+{n:"ADI Predictstreet",c:"onchain",s:"partial",w:2,cr:"Finstreet Ltd (groupe IHC, Abu Dhabi)",
+ sn:"Accès géographique limité ; US en attente de licences",
+ d:"Partenaire prédiction officiel de la FIFA pour la Coupe du monde 2026, et accord mondial avec DAZN ; rails ADI Chain et stablecoin.",
+ r:"Licence Gibraltar",rg:"offshore",ch:"ADI Chain (L2 institutionnel)",
+ m:"Marchés on-chain réglés en stablecoin",
+ v:"n.d.",f:"Adossé à IHC (Abu Dhabi)",
+ x:"Le partenariat DAZN prévoit à terme un stablecoin à la marque DAZN.",u:""},
+{n:"SX Bet",c:"onchain",s:"live",w:1,cr:"SX Network",
+ d:"Exchange sportif on-chain avec l’outillage développeur le plus complet du segment.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Arbitrum",m:"Carnet d’ordres P2P",v:"n.d.",f:"n.d.",x:"",u:"https://sx.bet"},
+{n:"Sport.fun",c:"onchain",s:"live",w:1,cr:"Sport.fun",
+ d:"Fantasy sport tokenisé : on échange des parts fractionnées d’athlètes, payées selon leurs performances réelles.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Base",m:"Marché de parts d’athlètes",v:"TVL ~2,4 M$ (DefiLlama)",f:"n.d.",x:"",u:""},
+{n:"Zeitgeist",c:"onchain",s:"live",w:1,cr:"Zeitgeist PM",
+ d:"Protocole modulaire pour concevoir ses propres structures de marché, avec gouvernance on-chain.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Polkadot",m:"AMM et carnet d’ordres",v:"n.d.",f:"n.d.",x:"",u:"https://zeitgeist.pm"},
+{n:"Drift BET",c:"onchain",s:"live",w:1,cr:"Drift Protocol",
+ d:"Marchés de prédiction adossés à une plateforme de perps Solana, avec collatéral partagé.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Solana",m:"Carnet d’ordres de Drift",v:"Activité marginale ; statut à vérifier",f:"n.d.",x:"",u:""},
+{n:"Augur (nouvelle plateforme)",c:"onchain",s:"announced",w:1,cr:"Lituus Foundation",
+ sn:"Nouvelle plateforme annoncée sans date",
+ d:"Pionnier des marchés prédictifs on-chain (2015) en plein redémarrage ; une équipe distincte prépare une nouvelle plateforme.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Ethereum",m:"À préciser",v:"—",f:"Trésorerie Augur (REP)",x:"Voir aussi Augur Lituus dans l’infrastructure.",u:"https://augur.net"},
+
+{n:"Binance Wallet — Prediction",c:"wallet",s:"live",w:3,cr:"Binance",
+ d:"Accès en un clic depuis l’app Binance, frais de gas sponsorisés et wallet MPC sans clé ; agrège des venues tierces, à commencer par predict.fun.",
+ r:"Selon la région (non disponible partout)",rg:"defi",ch:"BNB Chain",
+ m:"Front-end ; liquidité et résolution de la venue sous-jacente",
+ v:"n.d.",f:"—",x:"Lancé le 9 avril 2026 après une bêta en mars.",u:""},
+{n:"Jupiter Predict",c:"wallet",s:"live",w:2,cr:"Jupiter (Solana)",
+ d:"Agrège Kalshi et Polymarket sur Solana, avec ordres limites ; seule venue Polymarket sur Solana.",
+ r:"Bloqué aux US et en Corée du Sud",rg:"defi",ch:"Solana",
+ m:"Agrégation ; suit la résolution de la venue d’origine, ses frais s’ajoutent à ceux de la venue",
+ v:"n.d.",f:"—",x:"",u:"https://jup.ag"},
+{n:"Phantom Predictions",c:"wallet",s:"live",w:2,cr:"Phantom",
+ d:"Marchés Kalshi tokenisés directement sur l’écran d’accueil du wallet, avec chat entre amis ; financement en SOL ou CASH.",
+ r:"Via Kalshi",rg:"cftc",ch:"Solana (via DFlow)",m:"Positions tokenisées Kalshi",
+ v:"Plus de 98 % du volume DFlow passe par Phantom (début 2026)",f:"—",x:"",u:"https://phantom.com"},
+{n:"MetaMask Predictions",c:"wallet",s:"live",w:2,cr:"Consensys",
+ d:"Intégration native et exclusive de Polymarket dans MetaMask Mobile.",
+ r:"Selon la région",rg:"defi",ch:"Polygon (Polymarket)",m:"Front-end Polymarket",
+ v:"n.d.",f:"—",x:"Lancé le 4 décembre 2025.",u:"https://metamask.io"},
+{n:"Trust Wallet Predictions",c:"wallet",s:"live",w:2,cr:"Trust Wallet (écosystème Binance)",
+ d:"Onglet multi-venues : Myriad, Polymarket (depuis 14 chaînes via MoonPay) et predict.fun, sans frais de plateforme.",
+ r:"Selon la région",rg:"defi",ch:"Polygon, BNB Chain, Abstract",m:"Agrégation",
+ v:"Base de 220 M d’utilisateurs",f:"—",x:"",u:"https://trustwallet.com/prediction-markets"},
+{n:"Byreal Predict",c:"wallet",s:"live",w:1,cr:"Byreal (DEX Solana incubé par Bybit)",
+ d:"Permet de trader les marchés Polymarket depuis Solana.",
+ r:"Selon la région",rg:"defi",ch:"Solana",m:"Accès aux marchés Polymarket",v:"n.d.",f:"—",x:"",u:""},
+
+{n:"UMA (Optimistic Oracle)",c:"infra",s:"live",w:4,cr:"Risk Labs",
+ d:"Oracle optimiste qui résout la majorité des marchés Polymarket : une réponse proposée devient définitive faute de contestation.",
+ r:"Non applicable",rg:"na",ch:"Ethereum et L2 (dont Polygon)",m:"Proposition, période de contestation, vote des détenteurs d’UMA",
+ v:"—",f:"Token UMA",x:"Critiqué lors de litiges de résolution très médiatisés.",u:"https://uma.xyz"},
+{n:"Chainlink",c:"infra",s:"live",w:3,cr:"Chainlink Labs",
+ d:"Flux de prix et moyennes temporelles qui servent à résoudre les marchés de prix (Limitless, Myriad).",
+ r:"Non applicable",rg:"na",ch:"Multichaîne",m:"Oracle décentralisé",v:"—",f:"Token LINK",x:"",u:"https://chain.link"},
+{n:"Gnosis Conditional Tokens",c:"infra",s:"live",w:3,cr:"Gnosis",
+ d:"Standard de tokens d’issue (CTF) sur lequel repose le règlement de Polymarket.",
+ r:"Non applicable",rg:"na",ch:"EVM",m:"Tokens conditionnels ERC-1155",v:"—",f:"—",x:"",u:"https://gnosis.io"},
+{n:"DFlow",c:"infra",s:"live",w:2,cr:"DFlow",
+ d:"Tokenise les contrats Kalshi sur Solana et alimente Phantom.",
+ r:"Non applicable",rg:"na",ch:"Solana",m:"Tokenisation de positions Kalshi",v:"Plus de 100 000 transactions en moins d’un mois après lancement",f:"n.d.",x:"",u:""},
+{n:"Azuro",c:"infra",s:"live",w:2,cr:"Azuro",
+ d:"Infrastructure on-chain de paris et prédictions sportives qui alimente plus de 50 apps.",
+ r:"Non applicable",rg:"na",ch:"Multichaîne (EVM)",m:"Pool de liquidité partagé",v:"n.d.",f:"Token AZUR",x:"",u:"https://azuro.org"},
+{n:"Augur Lituus",c:"infra",s:"partial",w:1,cr:"Lituus Foundation",
+ sn:"Test de migration en cours ; pas de date de lancement général",
+ d:"Oracle généraliste fondé sur des « forks algorithmiques » pour trancher les litiges de résolution, pensé comme infrastructure pour les autres plateformes.",
+ r:"Non applicable",rg:"na",ch:"Ethereum",m:"Oracle à mécanisme de fork",v:"—",f:"REP",x:"Whitepaper publié en janvier 2026, relance annoncée en juillet 2026.",u:"https://augur.net"},
+{n:"Agrégateurs de données (Oddpool, PolyRouter, PMXT)",c:"infra",s:"live",w:1,cr:"Projets indépendants",
+ d:"APIs qui normalisent les données de plusieurs venues (cotes, carnets, historique) pour les traders et les développeurs.",
+ r:"Non applicable",rg:"na",ch:"—",m:"APIs data cross-venues",v:"—",f:"n.d.",x:"PMXT est open source.",u:""},
+{n:"Kairos",c:"infra",s:"live",w:1,cr:"Kairos",
+ d:"Exécution cross-venues (REST et WebSocket) en plus de la donnée agrégée.",
+ r:"Non applicable",rg:"na",ch:"—",m:"Routage d’ordres multi-venues",v:"—",f:"n.d.",x:"Tient un annuaire public de près de 290 outils.",u:""},
+{n:"Stratium",c:"infra",s:"live",w:1,cr:"Stratium",
+ d:"Terminal qui affiche les outcome markets HIP-4 à côté des perps HIP-3 de Hyperliquid.",
+ r:"Non applicable",rg:"na",ch:"Hyperliquid",m:"Front-end",v:"—",f:"n.d.",x:"",u:""},
+{n:"Outcome",c:"infra",s:"live",w:1,cr:"Outcome (outcome.xyz)",
+ d:"Premier déployeur tiers de marchés HIP-4 permissionless sur Hyperliquid.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Hyperliquid",m:"Déploiement via templates HIP-4",v:"—",f:"n.d.",x:"",u:""},
+{n:"Dome",c:"infra",s:"closed",w:1,cr:"Dome (YC F25) → racheté par Polymarket",
+ sn:"APIs arrêtées le 28 avril 2026",
+ d:"API unifiée multi-venues (Polymarket, Kalshi), absorbée pour renforcer l’écosystème développeur de Polymarket.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",f:"Seed de 4,7 M$ avant rachat",x:"Racheté le 19 février 2026.",u:""},
+{n:"Fireplace",c:"infra",s:"closed",w:1,cr:"Fireplace",
+ sn:"Trading arrêté le 15 août 2026",
+ d:"Terminal social de trading ; utilisateurs migrés vers Polymarket.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",f:"n.d.",x:"",u:""}
+];
+
+const GEN = {
+ "n.d.":"n/a","Non applicable":"Not applicable","Aucune (DeFi)":"None (DeFi)","À préciser":"TBD","Selon la région":"Region-dependent",
+ "Multichaîne":"Multichain","Off-chain ; dépôts crypto possibles":"Off-chain; crypto deposits possible"
+};
+const EN = {
+"Kalshi":{cr:"Kalshi Inc. — Tarek Mansour and Luana Lopes Lara (2018)",d:"First CFTC-regulated exchange built for event contracts; global volume leader, driven by sports (over 80% of its volume) and massive distribution (Robinhood, Coinbase, Webull, Phantom, Jupiter).",ch:"Off-chain (USD); tokenized positions on Solana via DFlow and Jupiter",m:"Central limit order book with market makers; resolved by the exchange under the contract rules",v:"$60.7B in contracts in Sept. 2026 (record); $244.5B year to date; ~80% of tracked volume",f:"$1B Series F at $22B (May 2026); ~$40B round being finalized (Oct. 2026); ~$4B annualized revenue (Aug. 2026)",x:"Launched crypto perpetuals in April 2026. IPO considered for 2027. Litigation with several states: in Sept. 2026 the 6th Circuit ruled that Ohio and Tennessee can regulate its sports contracts."},
+"Polymarket (International)":{d:"The on-chain, self-custodial benchmark, very strong in politics, geopolitics and crypto; its odds are quoted by the media and finance (ICE, Google Finance).",r:"Offshore (outside the US)",ch:"Polygon; pUSD collateral backed 1:1 by USDC since April 2026",m:"Hybrid order book (off-chain matching, on-chain settlement via Conditional Tokens); UMA optimistic oracle",v:"$4.6B in Sept. 2026; ~6% of tracked volume",f:"$1B at $21B post-money led by 1789 Capital (Sept. 2026); ICE holds a ~$1.6B position",x:"POLY token and airdrop confirmed by management, no date set. Acquisitions: QCEX (US license) and Dome (multi-venue API). Distributed via MetaMask, Trust Wallet and Jupiter."},
+"Polymarket US":{cr:"QCX LLC (Polymarket subsidiary)",d:"Regulated US version relaunched in December 2025, sports-focused; parlays make up more than half of its volume.",r:"CFTC — DCM + DCO (ex-QCEX, acquired for $112M)",m:"Central order book; parlays",v:"≈$2.8B in the week of Sept. 21–27, 2026; 12–15% of tracked volume",f:"See Polymarket",x:"Sued by New York State. Hired Lisa Mantil (ex-Goldman Sachs) to attract institutional and block flow."},
+"OG.com":{cr:"Crypto.com (Kris Marszalek) — independent spin-off, CEO Nick Lundgren",d:"White-label exchange and clearinghouse: powers Fanatics Markets, Truth Predict, High Roller, Prospect Markets and part of Robinhood's flow.",m:"Central order book; contracts listed by the exchange",v:"Largest B2B deal in the sector, with Robinhood (US football, Sept. 2026)",f:"Valued at $5B when Robinhood took a stake (Sept. 2026); Crypto.com valued at $20B",x:"Launched February 3, 2026. Next targets futures and perpetuals."},
+"Novig":{d:"Low-fee peer-to-peer sports exchange that moved from the sweepstakes model to the federal framework.",r:"CFTC — DCM via Ludlow Exchange (June 2026)",m:"P2P order book, no house counterparty",v:"~2% of the volume tracked by DeFi Rate (Sept. 2026)",f:"$75M Series B at $500M (2026); new round targeted at ~$2B (Oct. 2026)",x:"Among the first sports DCMs approved in 2026, alongside ProphetX."},
+"ProphetX":{cr:"ProphetX — Dean Sisun and Jake Benzaquen",d:"Sports-only exchange with in-house clearing and RFQ-negotiated parlays between counterparties.",r:"CFTC — DCM + DCO (June 2026)",m:"Order book + RFQ mechanism for parlays",x:"Went live five days after approval, the fastest turnaround of the CFTC era."},
+"PredictIt":{d:"Long-running political market (2014) under an academic framework, with per-contract caps; no sports.",r:"CFTC — no-action letter (research framework)",m:"Order book, position caps",x:"The Aristotle exchange (DCM/DCO) was sold to Underdog in March 2026; PredictIt stays with Aristotle and operates as before."},
+"Sporttrade":{sn:"DCM application filed in early 2026",d:"Former state-licensed betting exchange moving to a federal sports exchange.",r:"CFTC — DCM under review",m:"Order-book sports exchange",x:"Other sports applications are also pending, including RSBIX."},
+"Hyperliquid — HIP-4 (Outcomes)":{d:"Outcome markets built into the HyperCore engine: same account and margin as perps, existing liquidity, and permissionless deployment for 500,000 staked HYPE.",r:"None (DeFi, global access)",ch:"Hyperliquid L1 (HyperCore); settled in USDC (USDH planned)",m:"On-chain order book, fully collateralized contracts with no leverage; resolved by validators on objective sources via 7 approved templates (prices, rate decisions)",v:"~$100M in the first full month; close to 1,000 markets tracked (Sept. 2026)",f:"No outside funding",x:"Announced February 2, 2026; mainnet May 2; multi-outcome May 7; permissionless at the end of August 2026. Fee-free until late August. First third-party deployer: Outcome."},
+"Coinbase Prediction Markets":{d:"Predictions inside the “everything exchange”, funded in USD or USDC; access to all Kalshi markets.",r:"Via Kalshi (DCM); Coinbase Financial Markets",ch:"Off-chain; USDC funding possible",m:"Routes to Kalshi; more venues announced",f:"Acquired The Clearing Company (founded by Toni Gemayel, ex-Polymarket and Kalshi) in late 2025",x:"Available in all 50 states since January 28, 2026."},
+"Gemini Predictions":{cr:"Gemini Space Station — Tyler and Cameron Winklevoss",d:"Its own exchange and a core strategic bet: Gemini left the UK, the EU and Australia to focus on US predictions; AI-personalized feed (Grok).",m:"Central order book",v:"$0.4M revenue and ~20,000 users in Q1 2026",f:"Listed company (Nasdaq: GEMI)",x:"Launched in mid-December 2025."},
+"Kraken":{sn:"Launch announced for 2026; no confirmed launch found as of Oct. 4",d:"Planned building block of Kraken's multi-asset strategy, alongside xStocks tokenized equities.",x:"Kraken is the official crypto exchange supporter of the 2026 World Cup."},
+"Robinhood Prediction Markets":{d:"Multi-venue hub that routes each contract to Kalshi, ForecastEx, Rothera (its joint venture) or OG.com depending on availability; huge retail customer base.",r:"FCM; Rothera exchange (JV with Susquehanna) DCM + DCO live since June 2026",m:"Smart routing across exchanges",v:"$156M in event contract revenue in Q2 2026; #2 US venue by regulated volume",f:"Listed (HOOD); stakes in Crypto.com and OG.com (Sept. 2026)",x:"Predictions are the group's fastest-growing segment, according to its CEO."},
+"Interactive Brokers — ForecastEx":{d:"Its own exchange focused on macro, economics and climate; IBKR also distributes Cboe Predicts contracts.",m:"Central order book",f:"Listed (IBKR)",x:"ForecastEx is one of the venues Robinhood routes to."},
+"Cboe Predicts":{d:"Binaries on the Mini-S&P 500 (XSP) under the listed-options regime, cleared by OCC: the only offering outside the CFTC.",r:"SEC (listed options), OCC clearing",m:"Fixed-payout binary options, plus a partial-payout “Plus Zone” variant",f:"Listed (CBOE)",x:"Launched June 23, 2026 on Interactive Brokers; Schwab and other brokers to follow."},
+"Charles Schwab":{sn:"Announced in June 2026 for “the coming months”",d:"Only objectively verifiable financial events (S&P 500): no sports, no politics.",r:"SEC (via Cboe)",m:"Distributes Cboe contracts",f:"Listed (SCHW)",x:"39.5M active accounts to distribute to if it launches."},
+"CME Group — event contracts":{d:"The largest derivatives exchange lists event contracts and supplies those of FanDuel Predicts.",m:"CME-listed contracts, order book",f:"Listed (CME)",x:"Exclusive partner of FanDuel (Flutter)."},
+"ICE (Intercontinental Exchange)":{cr:"Intercontinental Exchange (NYSE parent)",d:"No platform of its own: a major Polymarket shareholder and distributor of its data to institutions.",f:"~$1.6B position in Polymarket",x:"Shows large exchanges entering through data rather than trading."},
+"tastytrade":{d:"Prediction access for a client base of active options traders.",r:"Via a partner DCM",m:"Distribution",f:"IG Group subsidiary",x:"Launched in late July 2026, three days before IG announced the Underdog acquisition."},
+"Webull":{d:"Kalshi event contracts inside the retail brokerage app.",r:"Via Kalshi (DCM)",m:"Routes to Kalshi",f:"Listed (BULL)"},
+"Wealthsimple":{sn:"Partnership with Kalshi announced, launch to be confirmed",d:"Canadian gateway: around 4,000 Kalshi contracts for retail investors.",r:"Canada (via Kalshi)",m:"Routes to Kalshi"},
+"DraftKings Predictions":{d:"Its own exchange, DKeX (from the Railbird acquisition), built into the app; DraftKings also acts as market maker.",r:"CFTC — DCM (DKeX); NFA introducing broker",m:"Order book, with the group as market maker",v:"Volume per customer above sportsbook handle per customer (April 2026, JPMorgan)",f:"~$300M of prediction marketing planned for 2026",x:"Sports contracts are pulled in states where the DraftKings sportsbook operates. DKeX live since June 2026."},
+"FanDuel Predicts":{cr:"Flutter Entertainment (with CME Group)",d:"App separate from the sportsbook, contracts listed by CME; sports only where online sports betting isn't legal, and no politics.",r:"CFTC via CME; FanDuel Prediction Markets LLC (FCM)",m:"CME contracts; FanDuel is also a market maker",f:"~$300M of prediction marketing planned for 2026",x:"Launched in December 2025. Available in all 50 states and Puerto Rico."},
+"Fanatics Markets":{d:"Mainstream sports merchandise brand, with pricing and liquidity from CDNA (Crypto.com); acquiring an exchange and clearinghouse from BGC Group.",r:"NFA introducing broker (ex-Paragon); DCM via CDNA",m:"Distributes CDNA contracts",v:"Live in 23 states and 4 territories",f:"BGC exchange acquisition announced in July 2026",x:"World Cup partnership with ADI Predictstreet."},
+"Underdog Predict":{cr:"Underdog — Jeremy Levine (being acquired by IG Group)",d:"#3 US venue by regulated volume; its own exchange since July 18, 2026; mixes DFS and predictions in combos.",r:"CFTC — DCM + DCO (ex-Aristotle Exchange); FCM",m:"Order book and combos",v:"$466M net revenue over the 12 months to June 2026 (mostly DFS)",f:"Acquisition by IG Group for up to $1.3B (announced July 30, 2026)",x:"Previously relied on Crypto.com, then Kalshi."},
+"PrizePicks Predictions":{d:"Predictions inside the fantasy sports app; distributes third-party exchange contracts (Kalshi, Polymarket).",r:"NFA-registered FCM",m:"Distribution"},
+"Truth Predict":{sn:"In beta since February 2026, no broad launch",d:"Predictions built into the Truth Social network; “gems” earned on the platform convert into CRO.",r:"CFTC via CDNA (Crypto.com)",ch:"Off-chain; CRO",m:"Distributes CDNA contracts",f:"Listed (DJT)",x:"Announced October 28, 2025."},
+"Meta « Arena »":{n:"Meta “Arena”",sn:"Project reported by the New York Times (June 2026), not confirmed by Meta",d:"Standalone app that would draw on the Facebook and Instagram audience; likely points-based at first, real money not ruled out.",x:"Meta shut down an earlier forecasting app, Forecast, in 2022."},
+"predict.fun":{cr:"predict.fun (founder: dingaling) — backed by YZi Labs",d:"Yield-bearing collateral (deposited USDT is put to work on Venus) and distribution via Binance Wallet and Trust Wallet.",m:"Order book; taker fees charged at settlement",v:"$1.7B cumulative and 125,000 users (spring 2026); $579M taker volume in April",f:"YZi Labs increased its investment; acquired Probable (incubated by PancakeSwap) in March 2026",x:"Probable, launched by PancakeSwap and YZi Labs in late 2025 (zero fees, UMA oracle), is now part of predict.fun."},
+"Opinion (Opinion Labs)":{cr:"Opinion Labs — backed by YZi Labs",d:"Macro-first positioning (rates, commodities) rather than entertainment; AI-assisted resolution.",m:"Order book; AI-assisted oracle",v:"$3.1B cumulative notional in the 3 weeks after launch (Oct.–Nov. 2025); $376M taker volume in April 2026",f:"$20M pre-Series A (February 2026: Hack VC, Jump Crypto, Primitive Ventures)",x:"Mainnet launched October 24, 2025."},
+"Limitless":{d:"Ultra-short markets (minutes, hours) on crypto prices, settled on a Chainlink average rather than a spot print; the leading venue on Base.",m:"Order book + AMM; Chainlink oracle (TWAP)",v:"$205M taker volume in April 2026",x:"Zero maker fees."},
+"Myriad Markets":{cr:"Dastan (parent company of Decrypt)",d:"“Media-native” markets embedded in articles and apps; the first provider chosen by Trust Wallet.",m:"Order book + AMM; Chainlink oracles",v:"$100M cumulative volume and 400,000+ traders",f:"Backers: MoonPay Ventures, Tom Lee, ConsenSys, Hack VC"},
+"ADI Predictstreet":{cr:"Finstreet Ltd (IHC group, Abu Dhabi)",sn:"Limited geographic access; US pending licenses",d:"Official FIFA prediction market partner for the 2026 World Cup, plus a global deal with DAZN; ADI Chain rails and stablecoin.",r:"Gibraltar license",ch:"ADI Chain (institutional L2)",m:"On-chain markets settled in stablecoin",f:"Backed by IHC (Abu Dhabi)",x:"The DAZN partnership eventually includes a DAZN-branded stablecoin."},
+"SX Bet":{d:"On-chain sports exchange with the most complete developer tooling in the segment.",m:"P2P order book"},
+"Sport.fun":{d:"Tokenized fantasy sports: trade fractional shares of athletes, paid out on real-world performance.",m:"Athlete share market",v:"TVL ~$2.4M (DefiLlama)"},
+"Zeitgeist":{d:"Modular protocol for designing your own market structures, with on-chain governance.",m:"AMM and order book"},
+"Drift BET":{d:"Prediction markets attached to a Solana perps platform, with shared collateral.",m:"Drift order book",v:"Marginal activity; status to be verified"},
+"Augur (nouvelle plateforme)":{n:"Augur (new platform)",sn:"New platform announced, no date",d:"Pioneer of on-chain prediction markets (2015), now rebooting; a separate team is building a new platform.",f:"Augur treasury (REP)",x:"See also Augur Lituus under infrastructure."},
+"Binance Wallet — Prediction":{d:"One-tap access from the Binance app, sponsored gas and a keyless MPC wallet; aggregates third-party venues, starting with predict.fun.",r:"Region-dependent (not available everywhere)",m:"Front-end; liquidity and resolution from the underlying venue",x:"Launched April 9, 2026 after a beta in March."},
+"Jupiter Predict":{d:"Aggregates Kalshi and Polymarket on Solana, with limit orders; the only Polymarket venue on Solana.",r:"Blocked in the US and South Korea",m:"Aggregation; follows the source venue's resolution, and its fees stack on top of the venue's"},
+"Phantom Predictions":{d:"Tokenized Kalshi markets right on the wallet home screen, with chat between friends; funded in SOL or CASH.",r:"Via Kalshi",m:"Tokenized Kalshi positions",v:"Over 98% of DFlow volume went through Phantom (early 2026)"},
+"MetaMask Predictions":{d:"Native, exclusive Polymarket integration in MetaMask Mobile.",m:"Polymarket front-end",x:"Launched December 4, 2025."},
+"Trust Wallet Predictions":{cr:"Trust Wallet (Binance ecosystem)",d:"Multi-venue tab: Myriad, Polymarket (from 14 chains via MoonPay) and predict.fun, with no platform fee.",m:"Aggregation",v:"220M-user base"},
+"Byreal Predict":{cr:"Byreal (Bybit-incubated Solana DEX)",d:"Lets users trade Polymarket markets from Solana.",m:"Access to Polymarket markets"},
+"UMA (Optimistic Oracle)":{d:"Optimistic oracle that resolves most Polymarket markets: a proposed answer becomes final unless disputed.",ch:"Ethereum and L2s (incl. Polygon)",m:"Proposal, dispute window, UMA holder vote",f:"UMA token",x:"Criticized during high-profile resolution disputes."},
+"Chainlink":{d:"Price feeds and time-weighted averages used to resolve price markets (Limitless, Myriad).",m:"Decentralized oracle",f:"LINK token"},
+"Gnosis Conditional Tokens":{d:"Outcome token standard (CTF) underpinning Polymarket's settlement.",m:"ERC-1155 conditional tokens"},
+"DFlow":{d:"Tokenizes Kalshi contracts on Solana and powers Phantom.",m:"Tokenization of Kalshi positions",v:"Over 100,000 transactions in under a month after launch"},
+"Azuro":{d:"On-chain sports betting and prediction infrastructure powering 50+ apps.",ch:"Multichain (EVM)",m:"Shared liquidity pool",f:"AZUR token"},
+"Augur Lituus":{sn:"Migration test underway; no general launch date",d:"General-purpose oracle based on “algorithmic forks” to settle resolution disputes, designed as infrastructure for other platforms.",m:"Fork-based oracle",x:"Whitepaper published January 2026, relaunch announced July 2026."},
+"Agrégateurs de données (Oddpool, PolyRouter, PMXT)":{n:"Data aggregators (Oddpool, PolyRouter, PMXT)",cr:"Independent projects",d:"APIs that normalize data across venues (odds, order books, history) for traders and developers.",m:"Cross-venue data APIs",x:"PMXT is open source."},
+"Kairos":{d:"Cross-venue execution (REST and WebSocket) on top of aggregated data.",m:"Multi-venue order routing",x:"Maintains a public directory of nearly 290 tools."},
+"Stratium":{d:"Terminal showing Hyperliquid's HIP-4 outcome markets next to HIP-3 perps."},
+"Outcome":{d:"First third-party deployer of permissionless HIP-4 markets on Hyperliquid.",m:"Deployment via HIP-4 templates"},
+"Dome":{cr:"Dome (YC F25) → acquired by Polymarket",sn:"APIs shut down on April 28, 2026",d:"Unified multi-venue API (Polymarket, Kalshi), absorbed to strengthen Polymarket's developer ecosystem.",f:"$4.7M seed before the acquisition",x:"Acquired February 19, 2026."},
+"Fireplace":{sn:"Trading halted on August 15, 2026",d:"Social trading terminal; users migrated to Polymarket."}
+};
+
+const FIELDS = ["n","cr","d","r","ch","m","v","f","x","sn"];
+function getLang(){
+  try{ const p = new URLSearchParams(location.search).get("lang"); if(p==="fr"||p==="en") return p; }catch(e){}
+  try{ const s = localStorage.getItem("pm-bench-lang"); if(s==="fr"||s==="en") return s; }catch(e){}
+  return "en";
+}
+const state = {lang:getLang(), cat:"", status:"", reg:"", q:"", sortK:"weight", sortDir:-1, open:new Set()};
+const T = () => I18N[state.lang];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const ID = r => norm(r.n).replace(/[^a-z0-9]+/g,"-");
+function L(r,k){
+  if(state.lang==="fr") return r[k];
+  const e = EN[r.n] || {};
+  if(e[k] !== undefined) return e[k];
+  return GEN[r[k]] ?? r[k];
+}
+
+function applyStatic(){
+  const t = T();
+  document.documentElement.lang = state.lang;
+  document.title = t.title;
+  document.getElementById("lang").value = state.lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => { const v = t[el.dataset.i18n]; if(typeof v === "string") el.textContent = v; });
+  document.getElementById("bar").setAttribute("aria-label", t.barLabel);
+  document.querySelector(".p80").textContent = t.pct[0];
+  document.querySelector(".p12").textContent = t.pct[1];
+  document.querySelector(".p6").textContent = t.pct[2];
+  document.querySelector(".novig").textContent = t.novig;
+  const valos = document.getElementById("valos");
+  valos.setAttribute("aria-label", t.valosLabel);
+  valos.innerHTML = t.valos.map(([b,s]) => `<div><b>${esc(b)}</b><small>${esc(s)}</small></div>`).join("");
+  const rd = document.getElementById("reading");
+  rd.setAttribute("aria-label", t.readingLabel);
+  rd.innerHTML = t.reading.map(([h,p]) => `<div><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join("");
+  document.getElementById("cats").setAttribute("aria-label", t.catsLabel);
+  const q = document.getElementById("q"); q.placeholder = t.search; q.setAttribute("aria-label", t.searchLabel);
+  const fs = document.getElementById("fstatus"); fs.setAttribute("aria-label", t.statusLabel);
+  fs.innerHTML = `<option value="">${esc(t.statusAll)}</option>` + Object.entries(t.statusOpts).map(([k,v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  fs.value = state.status;
+  const fr = document.getElementById("freg"); fr.setAttribute("aria-label", t.regLabel);
+  fr.innerHTML = `<option value="">${esc(t.regAll)}</option>` + Object.entries(t.regOpts).map(([k,v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  fr.value = state.reg;
+  document.getElementById("legendstatus").innerHTML = Object.entries(t.status).map(([k,v]) => `<span class="pill ${STATUS_META[k][0]}">${esc(v)}</span>`).join("");
+  document.getElementById("sources").innerHTML = t.sources.map((s,i) => `<li><a href="${SOURCE_URLS[i]}" target="_blank" rel="noopener">${esc(s)}</a></li>`).join("");
+}
+
+function renderCats(){
+  const t = T(), box = document.getElementById("cats"), counts = {};
+  D.forEach(r => counts[r.c] = (counts[r.c]||0)+1);
+  const items = [["", t.all, D.length], ...Object.entries(t.cats).map(([k,v]) => [k, v, counts[k]||0])];
+  box.innerHTML = items.map(([k,l,n]) => `<button type="button" class="cat" data-c="${k}" aria-pressed="${state.cat===k}">${esc(l)} <em>${n}</em></button>`).join("");
+  box.querySelectorAll(".cat").forEach(b => b.addEventListener("click", () => { state.cat = b.dataset.c; renderCats(); render(); }));
+}
+
+function val(r,k){
+  if(k==="status") return STATUS_META[r.s][1];
+  if(k==="weight") return r.w;
+  const map = {name:"n",creator:"cr",reg:"r",chain:"ch"};
+  return norm(L(r,map[k]));
+}
+
+function render(){
+  const t = T(), q = norm(state.q);
+  let rows = D.filter(r =>
+    (!state.cat || r.c===state.cat) && (!state.status || r.s===state.status) && (!state.reg || r.rg===state.reg) &&
+    (!q || norm(FIELDS.map(k => L(r,k)).concat([t.cats[r.c], r.n]).join(" ")).includes(q))
+  );
+  rows.sort((a,b) => {
+    const va = val(a,state.sortK), vb = val(b,state.sortK);
+    if(va<vb) return -1*state.sortDir; if(va>vb) return state.sortDir;
+    return b.w - a.w || norm(a.n).localeCompare(norm(b.n));
+  });
+  document.querySelectorAll("thead th[data-k]").forEach(th => {
+    const on = th.dataset.k===state.sortK;
+    th.setAttribute("aria-sort", on ? (state.sortDir===1?"ascending":"descending") : "none");
+    th.querySelector(".arr").textContent = on ? (state.sortDir===1?"▲":"▼") : "▲▼";
+  });
+  document.getElementById("count").textContent = t.count(rows.length, D.length);
+  const tb = document.getElementById("tb");
+  if(!rows.length){
+    tb.innerHTML = `<tr><td colspan="10" class="empty">${esc(t.empty)} <button type="button" id="clr">${esc(t.clear)}</button></td></tr>`;
+    document.getElementById("clr").addEventListener("click", resetAll);
+    return;
+  }
+  const blank = new Set(["n.d.","n/a","—",""]);
+  const cell = v => blank.has(v ?? "") ? `<span class="nd">${esc(v||"—")}</span>` : esc(v);
+  tb.innerHTML = rows.map(r => {
+    const id = ID(r), open = state.open.has(id), name = L(r,"n"), sn = L(r,"sn"), x = L(r,"x");
+    const bars = [1,2,3,4,5].map(i => `<i class="${i<=r.w?"on":""}"></i>`).join("");
+    let html = `<tr class="main" data-id="${id}">
+      <td class="name"><strong>${esc(name)}</strong><span class="cattag">${esc(t.cats[r.c])}</span>
+        <button type="button" class="tog" aria-expanded="${open}" aria-controls="d-${id}">${open?t.hide:t.show}</button></td>
+      <td><span class="pill ${STATUS_META[r.s][0]}">${esc(t.status[r.s])}</span>${sn?`<span class="snote">${esc(sn)}</span>`:""}</td>
+      <td><div class="weight" aria-hidden="true">${bars}</div><span class="wlabel">${esc(t.weight[r.w])}</span></td>
+      <td class="creator">${esc(L(r,"cr"))}</td>
+      <td class="w-diff">${esc(L(r,"d"))}</td>
+      <td class="w-mid">${esc(L(r,"r"))}</td>
+      <td class="w-mid">${cell(L(r,"ch"))}</td>
+      <td class="w-mid">${cell(L(r,"m"))}</td>
+      <td class="w-num">${cell(L(r,"v"))}</td>
+      <td class="w-num">${cell(L(r,"f"))}</td>
+    </tr>`;
+    if(open){
+      html += `<tr class="detail" id="d-${id}"><td colspan="10"><div class="dbox">
+        <p>${x?esc(x):esc(t.noMore)}</p>
+        ${r.u?`<a href="${esc(r.u)}" target="_blank" rel="noopener">${esc(t.open(name))}</a>`:""}
+      </div></td></tr>`;
+    }
+    return html;
+  }).join("");
+  tb.querySelectorAll("tr.main").forEach(tr => tr.addEventListener("click", e => {
+    if(e.target.closest("a")) return;
+    const id = tr.dataset.id;
+    state.open.has(id) ? state.open.delete(id) : state.open.add(id);
+    render();
+  }));
+}
+
+function resetAll(){
+  state.cat=""; state.status=""; state.reg=""; state.q="";
+  document.getElementById("q").value=""; document.getElementById("fstatus").value=""; document.getElementById("freg").value="";
+  renderCats(); render();
+}
+function setLang(l){
+  state.lang = l;
+  try{ localStorage.setItem("pm-bench-lang", l); }catch(e){}
+  applyStatic(); renderCats(); render();
+}
+
+document.querySelectorAll("thead th[data-k] button").forEach(b => b.addEventListener("click", () => {
+  const k = b.parentElement.dataset.k;
+  if(state.sortK===k) state.sortDir *= -1; else { state.sortK=k; state.sortDir = (k==="weight") ? -1 : 1; }
+  render();
+}));
+document.getElementById("lang").addEventListener("change", e => setLang(e.target.value));
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+document.getElementById("fstatus").addEventListener("change", e => { state.status = e.target.value; render(); });
+document.getElementById("freg").addEventListener("change", e => { state.reg = e.target.value; render(); });
+document.getElementById("reset").addEventListener("click", resetAll);
+
+applyStatic(); renderCats(); render();
+</script>
+</body>
+</html>
