@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prediction markets benchmark — October 2026</title>
+<script>
+(function(){var t;try{t=localStorage.getItem("pm-bench-theme")}catch(e){}
+if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+var d=document.documentElement;d.dataset.theme=t;d.classList.add("js")})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap" rel="stylesheet">
+<style>
+/* ───────── Tokens ───────── */
+:root{
+  color-scheme:light;
+  --bg:#F5F7FA; --surface:#FFFFFF; --sunken:#ECEFF4;
+  --ink:#0A0F1A; --ink-2:#3D4756; --ink-3:#657082; --ink-4:#98A1AE;
+  --line:rgba(10,15,26,.085); --line-2:rgba(10,15,26,.16);
+  --blue:#1B45D9; --blue-soft:rgba(27,69,217,.09);
+  --green:#0A8A62; --green-ink:#07724F;
+  --amber:#A8700A;
+  --seg1:#1B45D9; --seg2:#0A8A62; --seg3:#8AD8BC; --seg4:#B4BBC6;
+  --grid:rgba(10,15,26,.05); --hover:rgba(10,15,26,.03);
+  --pop:0 1px 2px rgba(10,15,26,.05),0 10px 28px -14px rgba(10,15,26,.22);
+  --focus:#1B45D9;
+
+  --f-sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --f-serif:"Newsreader","Iowan Old Style","Palatino Linotype",Georgia,serif;
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:72px; --s9:112px;
+  --r1:2px; --r2:4px; --r3:6px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --gut:clamp(16px,4vw,40px);
+  --cmd-h:0px;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#07090D; --surface:#0E1218; --sunken:#0B0E13;
+  --ink:#ECEEF2; --ink-2:#B6BDC9; --ink-3:#8791A0; --ink-4:#5C6573;
+  --line:rgba(236,238,242,.08); --line-2:rgba(236,238,242,.16);
+  --blue:#6B95FF; --blue-soft:rgba(107,149,255,.13);
+  --green:#37D6A0; --green-ink:#37D6A0;
+  --amber:#E3B257;
+  --seg1:#6B95FF; --seg2:#37D6A0; --seg3:#1D8263; --seg4:#4A5362;
+  --grid:rgba(236,238,242,.04); --hover:rgba(236,238,242,.035);
+  --pop:0 0 0 1px rgba(236,238,242,.1),0 14px 32px -14px rgba(0,0,0,.8);
+  --focus:#8FB0FF;
+}
+
+/* ───────── Base ───────── */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--cmd-h) + 56px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-feature-settings:"ss01","cv11";
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p,ul,ol,dl,dd{margin:0}
+ul,ol{padding:0;list-style:none}
+svg{display:block;flex:none}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r1)}
+::selection{background:var(--blue);color:#fff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.wrap{max-width:1440px;margin:0 auto;padding:0 var(--gut)}
+.num{font-variant-numeric:tabular-nums lining-nums}
+
+/* Type roles */
+.kicker{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.kicker::before{content:"";width:6px;height:6px;background:var(--blue);flex:none}
+.kicker.g::before{background:var(--green)}
+.sec-title{font-size:17px;font-weight:500;letter-spacing:-.01em;line-height:1.35;color:var(--ink);max-width:62ch;margin-top:10px}
+.label{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+
+/* Signature grid, fades out under the hero */
+.page{position:relative;isolation:isolate}
+.page::before{content:"";position:absolute;inset:0 0 auto 0;height:640px;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:64px 64px;background-position:center top;
+  -webkit-mask-image:radial-gradient(120% 100% at 80% 0%,#000 0%,transparent 72%);mask-image:radial-gradient(120% 100% at 80% 0%,#000 0%,transparent 72%)}
+
+/* ───────── Top bar ───────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);height:64px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;letter-spacing:-.005em;min-width:0}
+.brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mark{width:18px;height:18px;display:grid;grid-template-rows:62fr 38fr;gap:2px}
+.mark i{background:var(--blue)}
+.mark i+i{background:var(--green)}
+.tools{display:flex;align-items:center;gap:var(--s2)}
+.lang{display:flex;border:1px solid var(--line-2);border-radius:var(--r2);padding:2px;gap:2px}
+.lang button{appearance:none;border:0;background:none;height:26px;padding:0 9px;border-radius:var(--r1);font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--ink-3);transition:color .2s,background-color .2s}
+.lang button:hover{color:var(--ink)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.theme{appearance:none;position:relative;width:32px;height:32px;border:1px solid var(--line-2);border-radius:var(--r2);background:none;color:var(--ink-2);transition:color .2s,border-color .2s,transform .15s}
+.theme:hover{color:var(--ink);border-color:var(--ink-3)}
+.theme:active{transform:scale(.94)}
+.theme svg{position:absolute;inset:0;margin:auto;transition:opacity .35s var(--ease),transform .5s var(--ease)}
+.theme .moon{opacity:0;transform:rotate(-60deg) scale(.5)}
+[data-theme="dark"] .theme .sun{opacity:0;transform:rotate(60deg) scale(.5)}
+[data-theme="dark"] .theme .moon{opacity:1;transform:none}
+
+/* ───────── Hero ───────── */
+.hero{padding:clamp(40px,7vw,96px) 0 clamp(36px,5vw,64px)}
+.eyebrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow b{font-weight:500;color:var(--ink)}
+.eyebrow .sep{width:18px;height:1px;background:var(--line-2)}
+.signal{display:inline-flex;align-items:center;gap:8px}
+.signal::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 50%,transparent);animation:ping 2.8s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 45%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+h1{font-family:var(--f-serif);font-optical-sizing:auto;font-weight:400;font-size:clamp(40px,6.5vw,94px);line-height:.98;letter-spacing:-.028em;margin:clamp(20px,2.4vw,32px) 0 0;text-wrap:balance}
+h1 span{display:block}
+h1 em{display:block;font-style:italic;color:var(--blue);letter-spacing:-.02em}
+.hero-foot{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:var(--s6) clamp(32px,8vw,128px);align-items:end;margin-top:clamp(28px,3.4vw,48px)}
+.lede{font-size:clamp(16px,1.35vw,19px);line-height:1.5;color:var(--ink-2);max-width:60ch;letter-spacing:-.005em}
+.note{border-left:1px solid var(--line-2);padding-left:var(--s4);font-size:12.5px;line-height:1.5;color:var(--ink-3)}
+.note .label{display:block;margin-bottom:6px}
+
+/* ───────── Market share ───────── */
+.band{padding:clamp(28px,3.4vw,44px) 0;border-top:1px solid var(--line)}
+.band-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--s3) var(--s6);margin-bottom:var(--s6)}
+.share{position:relative}
+.legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s4) var(--s5);margin-bottom:var(--s5)}
+.lg{appearance:none;display:block;width:100%;text-align:left;border:0;background:none;padding:0;transition:opacity .25s}
+.lg-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--ink-2);line-height:1.3}
+.lg-name i{width:8px;height:8px;flex:none;background:var(--c)}
+.lg-val{display:block;margin-top:6px;font-size:clamp(34px,4.6vw,64px);font-weight:500;line-height:1;letter-spacing:-.045em;font-variant-numeric:tabular-nums lining-nums}
+.lg-val small{font-size:.42em;font-weight:500;letter-spacing:0;color:var(--ink-3);margin-left:.14em;vertical-align:.52em}
+.bar{display:flex;gap:2px;height:36px}
+.seg{flex:1 0 0;min-width:3px;background:var(--c);transform-origin:left center;transition:opacity .25s,transform 1s var(--ease);transition-delay:0s,calc(var(--i)*90ms + 120ms);cursor:pointer}
+.seg:first-child{border-radius:var(--r1) 0 0 var(--r1)}
+.seg:last-child{border-radius:0 var(--r1) var(--r1) 0}
+.js .share:not(.in) .seg{transform:scaleX(0)}
+.share[data-active] .seg,.share[data-active] .lg{opacity:.28}
+.share[data-active="0"] [data-i="0"],.share[data-active="1"] [data-i="1"],.share[data-active="2"] [data-i="2"],.share[data-active="3"] [data-i="3"]{opacity:1}
+[data-i="0"]{--c:var(--seg1)}[data-i="1"]{--c:var(--seg2)}[data-i="2"]{--c:var(--seg3)}[data-i="3"]{--c:var(--seg4)}
+.scale{display:flex;justify-content:space-between;margin-top:8px;font-family:var(--f-mono);font-size:10px;letter-spacing:.04em;color:var(--ink-4);border-top:1px solid var(--line);padding-top:6px;position:relative}
+.scale span{position:relative}
+.scale span::before{content:"";position:absolute;top:-7px;left:0;width:1px;height:5px;background:var(--line-2)}
+.scale span:last-child::before{left:auto;right:0}
+.scale span:nth-child(n+2):nth-last-child(n+2)::before{left:50%}
+.tip{position:absolute;z-index:4;left:0;top:0;width:max-content;max-width:min(300px,calc(100% - 8px));padding:10px 12px;background:var(--ink);color:var(--bg);border-radius:var(--r2);font-size:12.5px;line-height:1.4;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .16s,transform .2s var(--ease)}
+.tip.on{opacity:1;transform:none}
+.tip b{display:flex;justify-content:space-between;gap:var(--s4);font-weight:600;font-size:13px}
+.tip b span{font-family:var(--f-mono);font-weight:500}
+.tip p{margin-top:4px;opacity:.72}
+.caption{margin-top:var(--s5);font-size:13.5px;color:var(--ink-3);max-width:78ch}
+
+/* ───────── Snapshot ───────── */
+.snap{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.snap li{padding:0 var(--s5);border-left:1px solid var(--line)}
+.snap li:first-child{padding-left:0;border-left:0}
+.snap-v{display:block;font-size:clamp(30px,3.3vw,46px);font-weight:500;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+.meter{display:block;height:2px;margin:16px 0 14px;background:var(--line);position:relative}
+.meter i{position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--blue);transition:width 1.1s var(--ease);transition-delay:calc(var(--i)*70ms + 150ms)}
+.meter.est i{background:repeating-linear-gradient(90deg,var(--blue) 0 5px,transparent 5px 8px)}
+.js .snap:not(.in) .meter i{width:0}
+.snap-n{display:block;font-size:14px;font-weight:600;letter-spacing:-.005em}
+.snap-c{display:block;font-size:12.5px;color:var(--ink-3);line-height:1.4;margin-top:2px}
+.snap-c::first-letter{text-transform:uppercase}
+
+/* ───────── Market reading ───────── */
+.reading{padding:clamp(48px,6vw,88px) 0 clamp(48px,6vw,96px);border-top:1px solid var(--line)}
+.rd-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--s7) clamp(32px,6vw,96px);margin-top:var(--s6)}
+.ins-n{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--ink-4);transition:color .25s}
+.ins:hover .ins-n{color:var(--blue)}
+.ins h3{font-family:var(--f-serif);font-optical-sizing:auto;font-weight:400;letter-spacing:-.018em;text-wrap:balance}
+.ins p{color:var(--ink-2)}
+.ins-lead{border-top:2px solid var(--ink);padding-top:var(--s4)}
+.ins-lead .ins-n{color:var(--blue)}
+.ins-lead h3{font-size:clamp(30px,3.5vw,48px);line-height:1.04;margin:var(--s5) 0 var(--s4)}
+.ins-lead p{font-size:16px;line-height:1.55;max-width:46ch}
+.ins-row{display:grid;grid-template-columns:36px minmax(0,5fr) minmax(0,6fr);gap:var(--s3) var(--s5);padding:var(--s5) 0;border-top:1px solid var(--line-2);align-items:baseline}
+.ins-row:last-child{border-bottom:1px solid var(--line)}
+.ins-row h3{font-size:clamp(20px,1.75vw,25px);line-height:1.15}
+.ins-row p{font-size:14px;line-height:1.55}
+
+/* ───────── Benchmark: command bar ───────── */
+.bench-head{padding:clamp(28px,3vw,40px) 0 var(--s5);border-top:1px solid var(--line)}
+.cmd{position:sticky;top:0;z-index:6;background:var(--bg);margin:0 -12px;padding:10px 12px 0;border-bottom:1px solid var(--line-2)}
+.cmd-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.search{position:relative;flex:1 1 280px;max-width:440px;display:flex;align-items:center;height:36px;border:1px solid var(--line-2);border-radius:var(--r2);background:var(--surface);color:var(--ink-3);transition:border-color .2s,box-shadow .2s,color .2s}
+.search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);color:var(--blue)}
+.search>svg{position:absolute;left:11px;pointer-events:none;transition:transform .3s var(--ease)}
+.search:focus-within>svg{transform:scale(1.08)}
+.search input{appearance:none;flex:1;min-width:0;height:100%;border:0;background:none;padding:0 34px 0 34px;font-size:13.5px;color:var(--ink);outline:none}
+.search input::-webkit-search-cancel-button{display:none}
+.search input::placeholder{color:var(--ink-3);opacity:1;transition:opacity .25s,transform .35s var(--ease)}
+.search input:focus::placeholder{opacity:.5;transform:translateX(3px)}
+.search kbd,.qclear{position:absolute;right:7px;transition:opacity .15s,transform .2s var(--ease)}
+.search kbd{font-family:var(--f-mono);font-size:11px;line-height:20px;width:20px;text-align:center;border:1px solid var(--line-2);border-radius:var(--r1);color:var(--ink-3)}
+.qclear{appearance:none;width:22px;height:22px;display:grid;place-items:center;border:0;border-radius:var(--r1);background:none;color:var(--ink-3);opacity:0;transform:scale(.7);pointer-events:none}
+.qclear:hover{color:var(--ink);background:var(--hover)}
+.search.has kbd,.search:focus-within kbd{opacity:0}
+.search.has .qclear{opacity:1;transform:none;pointer-events:auto}
+.sel{position:relative;color:var(--ink-3)}
+.sel select{appearance:none;height:36px;max-width:230px;padding:0 30px 0 12px;border:1px solid var(--line-2);border-radius:var(--r2);background:var(--surface);font-size:13px;color:var(--ink-2);cursor:pointer;text-overflow:ellipsis;transition:border-color .2s,color .2s,box-shadow .2s}
+.sel select:hover{border-color:var(--ink-3)}
+.sel svg{position:absolute;right:10px;top:50%;margin-top:-5px;pointer-events:none}
+.sel.on select{border-color:var(--blue);color:var(--ink);box-shadow:inset 0 0 0 1px var(--blue)}
+.sel.on{color:var(--blue)}
+.sel-sort{display:none}
+.reset{appearance:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 10px;border:0;border-radius:var(--r2);background:none;font-size:13px;color:var(--ink-2);opacity:0;transform:translateX(-6px);pointer-events:none;visibility:hidden;transition:opacity .2s,transform .3s var(--ease),visibility 0s .3s,background-color .2s}
+.reset.on{opacity:1;transform:none;pointer-events:auto;visibility:visible;transition-delay:0s}
+.reset:hover{background:var(--hover);color:var(--ink)}
+.reset svg{transition:transform .5s var(--ease)}
+.reset:active svg{transform:rotate(-160deg);transition-duration:.1s}
+.count{margin-left:auto;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.count b{font-weight:500;color:var(--ink);font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:0 2px;margin-top:6px}
+.tab{appearance:none;position:relative;display:flex;align-items:baseline;gap:7px;height:38px;padding:0 10px;border:0;background:none;font-size:13px;color:var(--ink-3);white-space:nowrap;transition:color .2s}
+.tab:first-child{margin-left:-10px}
+.tab em{font-style:normal;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-4);transition:color .2s}
+.tab::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--ink);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+.tab:hover{color:var(--ink)}
+.tab[aria-pressed="true"]{color:var(--ink);font-weight:500}
+.tab[aria-pressed="true"] em{color:var(--blue)}
+.tab[aria-pressed="true"]::after{transform:scaleX(1)}
+.tab:focus-visible{outline-offset:-3px}
+
+/* ───────── Benchmark: table ───────── */
+.tbl-wrap{margin:0 -12px}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px;line-height:1.45}
+.tbl th{position:sticky;top:var(--cmd-h);z-index:3;background:var(--bg);padding:0;text-align:left;font-weight:500;border-bottom:1px solid var(--line-2)}
+.tbl th button,.tbl th .nob{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;height:38px;padding:0 12px;font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.tbl th button{cursor:pointer;transition:color .2s}
+.tbl th button:hover{color:var(--ink)}
+.tbl th button:focus-visible{outline:2px solid var(--focus);outline-offset:-3px}
+.tbl th button span{overflow:hidden;text-overflow:ellipsis}
+.arr{opacity:0;transition:opacity .2s,transform .35s var(--ease)}
+.tbl th button:hover .arr{opacity:.45}
+th[aria-sort="ascending"] button,th[aria-sort="descending"] button{color:var(--ink)}
+th[aria-sort="ascending"] .arr,th[aria-sort="descending"] .arr{opacity:1;color:var(--blue)}
+th[aria-sort="descending"] .arr{transform:rotate(180deg)}
+.c-name{width:20%}.c-status{width:12%}.c-weight{width:9%}.c-creator{width:12%}.c-reg{width:13%}.c-chain{width:11%}.c-vol{width:12%}.c-fund{width:11%}
+.tbl td{padding:14px 12px;vertical-align:top;border-bottom:1px solid var(--line);color:var(--ink-2);transition:background-color .18s}
+tr.main{cursor:pointer}
+tr.main:hover td{background:var(--hover)}
+tr.main td.c-name{box-shadow:inset 2px 0 0 transparent;transition:background-color .18s,box-shadow .25s}
+tr.main:hover td.c-name{box-shadow:inset 2px 0 0 var(--line-2)}
+tr.main.is-open td{background:var(--surface);border-bottom-color:transparent}
+tr.main.is-open td.c-name{box-shadow:inset 2px 0 0 var(--blue)}
+.rowbtn{all:unset;box-sizing:border-box;display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:14.5px;font-weight:600;line-height:1.3;letter-spacing:-.01em;color:var(--ink);max-width:100%}
+.rowbtn:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:var(--r1)}
+.rowbtn svg{margin-top:4px;color:var(--ink-4);transition:transform .35s var(--ease),color .2s}
+tr.main:hover .rowbtn svg{color:var(--ink)}
+tr.main.is-open .rowbtn svg{transform:rotate(90deg);color:var(--blue)}
+.cattag{display:block;margin:3px 0 0 20px;font-size:12px;color:var(--ink-3);line-height:1.35}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.st{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap}
+.st i{width:8px;height:8px;border-radius:50%;flex:none;border:1.5px solid var(--sc);background:var(--sc)}
+.st-live{--sc:var(--green)}
+.st-partial{--sc:var(--amber)}
+.st-partial i{background:linear-gradient(90deg,var(--sc) 50%,transparent 50%)}
+.st-pending{--sc:var(--blue)}
+.st-pending i{background:transparent}
+.st-announced{--sc:var(--blue)}
+.st-rumor{--sc:var(--ink-3)}
+.st-rumor i{background:transparent;border-style:dashed;border-width:1px}
+.st-closed{--sc:var(--ink-4);color:var(--ink-3)}
+.st-closed i{border-radius:1px}
+.snote{margin:4px 0 0 16px;font-size:12px;line-height:1.4;color:var(--ink-3)}
+.units{display:flex;gap:2px;margin:4px 0 6px}
+.units i{width:5px;height:12px;border-radius:1px;background:var(--line-2)}
+.units i.on{background:var(--ink)}
+.wlabel{font-size:12px;color:var(--ink-3)}
+.rtag{display:block;font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);margin-bottom:3px}
+.rtag+.clamp{font-size:12.5px;color:var(--ink-3)}
+.figs{color:var(--ink-3);font-variant-numeric:tabular-nums lining-nums}
+.figs b{font-weight:600;color:var(--ink)}
+.nd{color:var(--ink-4)}
+tbody.swap tr.main{animation:rowIn .32s var(--ease) both}
+tbody.intro .units i{animation:unitIn .5s var(--ease) both;animation-delay:calc(var(--i)*45ms + 200ms)}
+@keyframes rowIn{from{opacity:0;transform:translateY(4px)}}
+@keyframes unitIn{from{transform:scaleY(.25);opacity:.2}}
+.units i{transform-origin:bottom}
+
+/* Insight panel */
+tr.detail td{padding:0;border-bottom:1px solid var(--line-2);background:var(--surface);box-shadow:inset 2px 0 0 var(--blue)}
+.dwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s var(--ease)}
+.dwrap.open{grid-template-rows:1fr}
+.dinner{min-height:0;overflow:hidden}
+.dgrid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--s6) clamp(32px,5vw,80px);padding:6px 12px 30px 32px;opacity:0;transform:translateY(-6px);transition:opacity .3s,transform .45s var(--ease)}
+.dwrap.open .dgrid{opacity:1;transform:none;transition-delay:.08s}
+.d-lead{font-family:var(--f-serif);font-optical-sizing:auto;font-size:clamp(19px,1.6vw,22px);line-height:1.32;letter-spacing:-.012em;color:var(--ink);margin-top:8px;text-wrap:pretty}
+.d-ctx{margin-top:var(--s5)}
+.d-ctx p{margin-top:6px;font-size:13.5px;line-height:1.55;color:var(--ink-2);max-width:60ch}
+.visit{display:inline-flex;align-items:center;gap:8px;margin-top:var(--s5);height:34px;padding:0 12px 0 10px;border:1px solid var(--line-2);border-radius:var(--r2);font-size:13px;font-weight:500;color:var(--ink);transition:border-color .2s,background-color .2s,color .2s}
+.visit svg{color:var(--blue);transition:transform .3s var(--ease),color .2s}
+.visit:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.visit:hover svg{transform:translate(2px,-2px);color:currentColor}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--s6);align-content:start}
+.facts div{padding:10px 0 12px;border-top:1px solid var(--line)}
+.facts dd{margin-top:4px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.facts dd .st{font-size:13px}
+.facts dd .snote{margin-left:0}
+
+.empty{padding:72px 16px;text-align:center;color:var(--ink-3)}
+.empty svg{margin:0 auto 14px;color:var(--ink-4)}
+.empty p{font-size:15px;color:var(--ink-2)}
+.empty button{appearance:none;margin-top:14px;height:34px;padding:0 14px;border:1px solid var(--line-2);border-radius:var(--r2);background:none;font-size:13px;font-weight:500;transition:background-color .2s,color .2s,border-color .2s}
+.empty button:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+tr.none td{border-bottom:0}
+tr.none:hover td{background:none}
+
+/* ───────── Methodology & sources ───────── */
+.method{margin-top:clamp(64px,8vw,120px);padding:clamp(40px,5vw,72px) 0 0;border-top:2px solid var(--ink)}
+.m-title{font-family:var(--f-serif);font-optical-sizing:auto;font-weight:400;font-size:clamp(28px,3.2vw,44px);line-height:1.05;letter-spacing:-.02em;margin-top:var(--s4)}
+.m-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--s7) clamp(32px,6vw,96px);margin-top:var(--s7)}
+.m-text p{font-size:15px;line-height:1.6;color:var(--ink-2);max-width:54ch}
+.m-text p+p{margin-top:var(--s4)}
+.keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s5) var(--s6);margin-top:var(--s6);padding-top:var(--s5);border-top:1px solid var(--line)}
+.keys ul{margin-top:var(--s3);display:grid;gap:9px}
+.keys li{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-2)}
+.keys .units{margin:0}
+.src-list{margin-top:var(--s3);columns:2;column-gap:var(--s6)}
+.src-list li{break-inside:avoid;border-top:1px solid var(--line)}
+.src-list a{display:grid;grid-template-columns:22px minmax(0,1fr) 14px;gap:0 10px;align-items:start;padding:11px 0 12px;transition:color .2s}
+.src-i{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-4);line-height:20px}
+.src-p{display:block;font-size:14px;font-weight:600;line-height:20px;letter-spacing:-.005em}
+.src-d{display:block;font-size:13px;line-height:1.45;color:var(--ink-3)}
+.src-h{display:block;margin-top:2px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-4)}
+.src-list svg{margin-top:5px;color:var(--ink-4);transition:transform .3s var(--ease),color .2s}
+.src-list a:hover .src-p{color:var(--blue)}
+.src-list a:hover svg{transform:translate(2px,-2px);color:var(--blue)}
+.colophon{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:var(--s3) var(--s5);margin-top:clamp(48px,6vw,88px);padding:var(--s5) 0 var(--s7);border-top:1px solid var(--line);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.colophon .brand{font-family:var(--f-sans);font-size:13px;letter-spacing:-.005em;text-transform:none;color:var(--ink)}
+
+/* ───────── Motion ───────── */
+.js [data-reveal]{opacity:0;transform:translateY(14px);transition:opacity .7s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0ms)}
+.js [data-reveal].in{opacity:1;transform:none}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.3s;animation-timing-function:ease}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .js [data-reveal]{opacity:1;transform:none}
+  .js .share:not(.in) .seg{transform:none}
+  .js .snap:not(.in) .meter i{width:var(--w)}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+
+/* ───────── Responsive ───────── */
+@media (max-width:1279px){
+  .c-creator{display:none}
+  .c-name{width:23%}.c-status{width:14%}.c-weight{width:10%}.c-reg{width:14%}.c-chain{width:13%}.c-vol{width:13%}.c-fund{width:13%}
+}
+@media (max-width:1099px){
+  .c-fund{display:none}
+  .c-name{width:26%}.c-status{width:16%}.c-weight{width:12%}.c-reg{width:16%}.c-chain{width:14%}.c-vol{width:16%}
+  .snap{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:var(--s6)}
+  .snap li:nth-child(4){padding-left:0;border-left:0}
+  .rd-grid,.m-grid{grid-template-columns:1fr}
+  .ins-lead p{max-width:62ch}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);mask-image:linear-gradient(90deg,#000 90%,transparent)}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab:last-child{margin-right:48px}
+}
+@media (max-width:899px){
+  .c-chain{display:none}
+  .c-name{width:30%}.c-status{width:17%}.c-weight{width:13%}.c-reg{width:20%}.c-vol{width:20%}
+  .hero-foot{grid-template-columns:1fr}
+  .dgrid{grid-template-columns:1fr;gap:var(--s5)}
+  .legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:719px){
+  .topbar{height:56px}
+  .brand{font-size:13px}
+  .eyebrow .sep{display:none}
+  .snap{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .snap li,.snap li:nth-child(4){padding:0 var(--s4);border-left:1px solid var(--line)}
+  .snap li:nth-child(odd){padding-left:0;border-left:0}
+  .ins-row{grid-template-columns:36px minmax(0,1fr)}
+  .ins-row p{grid-column:2}
+  .cmd{position:static;border-bottom:1px solid var(--line-2)}
+  .search{flex-basis:100%;max-width:none;height:42px}
+  .search input{font-size:16px}
+  .search kbd{display:none}
+  .sel{flex:1 1 0;min-width:0}
+  .sel select{width:100%;max-width:none;height:40px}
+  .sel-sort{display:block;flex-basis:100%}
+  .reset{height:40px}
+  .count{flex:1;text-align:right}
+  .tabs{margin-top:8px}
+  .tab{height:42px}
+  .tbl,.tbl tbody{display:block}
+  .tbl thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  tr.main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px var(--s4);padding:16px 12px;border-bottom:1px solid var(--line);box-shadow:inset 2px 0 0 transparent;transition:background-color .18s,box-shadow .25s}
+  .tbl tr.main td{display:block;width:auto;padding:0;border:0;background:none!important;box-shadow:none!important}
+  tr.main:hover{background:var(--hover)}
+  tr.main.is-open{background:var(--surface);border-bottom-color:transparent;box-shadow:inset 2px 0 0 var(--blue)}
+  .tbl tr.main td.c-creator,.tbl tr.main td.c-reg,.tbl tr.main td.c-chain,.tbl tr.main td.c-fund{display:none}
+  td.c-name{grid-column:1;grid-row:1}
+  td.c-weight{grid-column:2;grid-row:1;display:flex!important;flex-direction:column;align-items:flex-end;text-align:right}
+  td.c-weight .units{margin:3px 0 5px}
+  td.c-status{grid-column:1/-1;padding-left:20px!important;display:flex!important;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
+  td.c-status .snote{margin:0}
+  td.c-vol{grid-column:1/-1;padding-left:20px!important}
+  td.c-vol .nd{display:none}
+  .rowbtn{font-size:16px}
+  tr.detail,tr.detail td{display:block}
+  .dgrid{padding:2px 12px 26px 32px}
+  .facts{grid-template-columns:1fr}
+  tr.none,tr.none td{display:block}
+  .keys{grid-template-columns:1fr}
+  .src-list{columns:1}
+}
+@media (max-width:420px){
+  .lang button{padding:0 7px}
+  .lg-name{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="wrap">
+
+<div class="topbar">
+  <div class="brand"><i class="mark" aria-hidden="true"><i></i><i></i></i><span data-i18n="brand"></span></div>
+  <div class="tools">
+    <div class="lang" id="lang" role="group">
+      <button type="button" data-l="en" lang="en" aria-label="English">EN</button>
+      <button type="button" data-l="fr" lang="fr" aria-label="Français">FR</button>
+    </div>
+    <button type="button" class="theme" id="theme">
+      <svg class="sun" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.9"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M3.2 12.8l1.1-1.1M11.7 4.3l1.1-1.1"/></svg>
+      <svg class="moon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M13.6 9.6A6 6 0 0 1 6.4 2.4a6 6 0 1 0 7.2 7.2Z"/></svg>
+    </button>
+  </div>
+</div>
+
+<header class="hero">
+  <p class="eyebrow" data-reveal>
+    <b data-i18n="issue"></b><i class="sep" aria-hidden="true"></i>
+    <span class="signal" id="tracked"></span><i class="sep" aria-hidden="true"></i>
+    <span data-i18n="updated"></span>
+  </p>
+  <h1 data-reveal style="--d:60ms"><span data-i18n="h1a"></span><em data-i18n="h1b"></em></h1>
+  <div class="hero-foot" data-reveal style="--d:140ms">
+    <p class="lede" data-i18n="lede"></p>
+    <p class="note"><span class="label" data-i18n="noteLabel"></span><span data-i18n="snap"></span></p>
+  </div>
+</header>
+
+<section class="band" aria-labelledby="shareTitle" data-reveal style="--d:200ms">
+  <div class="band-head">
+    <div>
+      <p class="kicker" data-i18n="shareKicker"></p>
+      <h2 class="sec-title" id="shareTitle" data-i18n="shareTitle"></h2>
+    </div>
+  </div>
+  <div class="share" id="share">
+    <ul class="legend" id="legend"></ul>
+    <div class="bar" id="bar" role="img"></div>
+    <div class="scale num" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    <div class="tip" id="tip" aria-hidden="true"></div>
+  </div>
+  <p class="caption" data-i18n="caption"></p>
+</section>
+
+<section class="band" aria-labelledby="snapTitle" data-reveal>
+  <div class="band-head">
+    <div>
+      <p class="kicker g" data-i18n="snapKicker"></p>
+      <h2 class="sec-title" id="snapTitle" data-i18n="valosLabel"></h2>
+    </div>
+  </div>
+  <ul class="snap" id="valos"></ul>
+</section>
+
+<section class="reading" aria-labelledby="readingTitle">
+  <p class="kicker" id="readingTitle" data-i18n="readingLabel" data-reveal></p>
+  <div class="rd-grid" id="reading"></div>
+</section>
+
+<main class="bench" id="bench">
+  <div class="bench-head">
+    <p class="kicker g" data-i18n="benchKicker"></p>
+    <h2 class="sec-title" id="benchTitle"></h2>
+  </div>
+
+  <div class="cmd" id="cmd">
+    <div class="cmd-row">
+      <div class="search" id="searchbox">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="4.3"/><path d="m9.3 9.3 3.2 3.2"/></svg>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
+        <kbd aria-hidden="true">/</kbd>
+        <button type="button" class="qclear" id="qclear" tabindex="-1"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="m1.5 1.5 7 7M8.5 1.5l-7 7"/></svg></button>
+      </div>
+      <div class="sel"><select id="fstatus"></select><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 3.5 3 3 3-3"/></svg></div>
+      <div class="sel"><select id="freg"></select><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 3.5 3 3 3-3"/></svg></div>
+      <div class="sel sel-sort"><select id="fsort"></select><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 3.5 3 3 3-3"/></svg></div>
+      <button class="reset" id="reset" type="button"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.2 7a4.8 4.8 0 1 0 1.5-3.5"/><path d="M2 1.8v2.4h2.4"/></svg><span data-i18n="reset"></span></button>
+      <p class="count"><span id="countv" aria-hidden="true"></span><span class="sr" id="count" aria-live="polite"></span></p>
+    </div>
+    <div class="tabs" id="cats" role="group"></div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table class="tbl" id="tbl" aria-labelledby="benchTitle">
+    <thead>
+      <tr>
+        <th class="c-name" data-k="name" scope="col"><button type="button"><span data-i18n="thName"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-status" data-k="status" scope="col"><button type="button"><span data-i18n="thStatus"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-weight" data-k="weight" scope="col"><button type="button"><span data-i18n="thWeightShort"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-creator" data-k="creator" scope="col"><button type="button"><span data-i18n="thCreatorShort"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-reg" data-k="reg" scope="col"><button type="button"><span data-i18n="thRegShort"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-chain" data-k="chain" scope="col"><button type="button"><span data-i18n="thChainShort"></span><svg class="arr" width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V1M1 4l3-3 3 3"/></svg></button></th>
+        <th class="c-vol" scope="col"><span class="nob" data-i18n="thVolShort"></span></th>
+        <th class="c-fund" scope="col"><span class="nob" data-i18n="thFundShort"></span></th>
+      </tr>
+    </thead>
+    <tbody id="tb" class="intro"></tbody>
+  </table>
+  </div>
+</main>
+
+<footer class="method" aria-labelledby="methodTitle">
+  <p class="kicker" data-i18n="methodKicker" data-reveal></p>
+  <h2 class="m-title" id="methodTitle" data-i18n="howTitle" data-reveal></h2>
+  <div class="m-grid">
+    <div class="m-text" data-reveal>
+      <p data-i18n="how1"></p>
+      <p data-i18n="how2"></p>
+      <div class="keys">
+        <div><h3 class="label" data-i18n="thWeight"></h3><ul id="legendweight"></ul></div>
+        <div><h3 class="label" data-i18n="thStatus"></h3><ul id="legendstatus"></ul></div>
+      </div>
+    </div>
+    <div data-reveal style="--d:80ms">
+      <h3 class="label" data-i18n="srcTitle"></h3>
+      <ol class="src-list" id="sources"></ol>
+    </div>
+  </div>
+  <div class="colophon">
+    <div class="brand"><i class="mark" aria-hidden="true"><i></i><i></i></i><span data-i18n="brand"></span></div>
+    <span data-i18n="updated"></span>
+  </div>
+</footer>
+
+</div>
+</div>
+
+<script>
+const I18N = {
+ en:{
+  title:"Prediction markets benchmark — October 2026",
+  langLabel:"Language",
+  h1:"Who runs prediction markets in October 2026",
+  lede:"58 players: dedicated platforms, on-chain protocols, crypto exchanges, brokers, sportsbooks, wallets and infrastructure. Filter by category or status, sort the columns, and open a row to read the context.",
+  snap:"Data collected on October 4, 2026. Volume figures are not consistent from one source to another: the period and method are stated in each cell.",
+  shareTitle:"Share of volume across the 4 venues tracked by DeFi Rate (Sept. 2 – Oct. 1, 2026)",
+  barLabel:"Kalshi 80%, Polymarket US 12%, Polymarket International 6%, Novig 2%",
+  pct:["80%","12%","6%"], novig:"Novig 2%",
+  caption:"Kalshi traded $60.7B in contracts in September 2026, a record. On-chain venues other than Polymarket account for a few percent at most.",
+  valos:[["~$40B","Kalshi, round being finalized"],["$21B","Polymarket, Sept. 2026"],["$5B","OG.com, Sept. 2026"],["~$2B","Novig, round in talks"],["$1.3B","Underdog, IG acquisition"]],
+  valosLabel:"Latest known valuations",
+  reading:[
+   ["One clear leader, driven by sports","Kalshi captures about 80% of tracked volume; sports make up over 80% of its activity. Polymarket remains the on-chain and media benchmark, but its international volume is shrinking in favor of its US version."],
+   ["A license is no longer a moat","Everyone is buying or obtaining a DCM/DCO: Polymarket (QCEX), DraftKings (Railbird), Underdog (Aristotle), Fanatics (BGC), Robinhood (Rothera). Novig and ProphetX were approved within months."],
+   ["The fight is over distribution","Brokers and wallets are becoming aggregators: Robinhood routes to 4 exchanges; Jupiter, Trust Wallet and Binance Wallet combine several venues. The product is commoditizing; customer access makes the difference."],
+   ["On-chain: Hyperliquid and the BNB cluster","HIP-4 has been permissionless since late August; predict.fun and Opinion lead on BNB Chain. TradFi is coming in through financial products (Cboe, CME, Schwab), far from sports and politics."]],
+  readingLabel:"Market reading",
+  catsLabel:"Filter by category", all:"All",
+  search:"Search a platform, a company, a chain…", searchLabel:"Search",
+  statusAll:"All statuses", statusLabel:"Filter by status",
+  statusOpts:{live:"Live",partial:"Partial or beta",pending:"Awaiting approval",announced:"Announced, not yet launched",rumor:"In development, unofficial",closed:"Closed or absorbed"},
+  regAll:"All regulations", regLabel:"Filter by regulation",
+  regOpts:{cftc:"CFTC (US)",sec:"SEC (US options)",offshore:"Offshore or other license",defi:"None (DeFi)",na:"Not applicable"},
+  reset:"Reset",
+  thName:"Platform",thStatus:"Status",thWeight:"Market weight",thCreator:"Creator / parent company",thDiff:"Point of differentiation",
+  thReg:"Regulatory status",thChain:"Blockchain / rails",thModel:"Market model and resolution",thVol:"Volume, open interest, traction",thFund:"Funding and valuation",
+  count:(n,t)=>`${n} player${n>1?"s":""} shown out of ${t}`,
+  empty:"No player matches these filters.", clear:"Reset filters",
+  show:"Show context", hide:"Hide context", noMore:"No additional information.", open:n=>`Open the ${n} website`,
+  howTitle:"How to read this table",
+  how1:"“Weight” is an analyst's judgment (1 to 5 bars) combining volume, distribution and influence; it is meant for sorting, not measuring.",
+  how2:"“n/a” means no reliable figure was found. Contract (notional) volumes overstate the money actually committed, especially on parlays.",
+  srcTitle:"Main sources",
+  sources:["DeFi Rate — Kalshi volumes and market share","DeFi Rate — Polymarket volumes","The Paypers — Kalshi at ~$40B","Wu Blockchain — Polymarket at $21B","Covers — Robinhood × OG.com","Bankless — HIP-4 goes permissionless","Datawallet — HIP-4 explained","Covers — IG Group acquires Underdog","Cboe — Cboe Predicts launch","Legal Sports Report — Meta's “Arena” project","Dropstab — on-chain venue volumes","DefiLlama — Prediction Markets category","Kairos — directory of tools and terminals","The Block — Polymarket resolves stock and commodity markets with Pyth","Pyth — Kalshi data goes on-chain","The Block — Polymarket adopts Chainlink for price markets","RedStone — Kalshi data on-chain"],
+  cats:{pure:"Dedicated regulated platform",onchain:"On-chain protocol",crypto:"Crypto exchange (segment)",broker:"Broker and TradFi exchange",sport:"Sportsbook, DFS and media",wallet:"Wallet and aggregator",infra:"Infra, oracle and data"},
+  status:{live:"Live",partial:"Partial or beta",pending:"Awaiting approval",announced:"Announced",rumor:"Unofficial",closed:"Closed or absorbed"},
+  weight:{5:"Leader",4:"Major",3:"Significant",2:"Challenger",1:"Niche or pre-launch"}
+ },
+ fr:{
+  title:"Benchmark des marchés prédictifs — octobre 2026",
+  langLabel:"Langue",
+  h1:"Qui fait les marchés prédictifs en octobre 2026",
+  lede:"58 acteurs : plateformes dédiées, protocoles on-chain, exchanges crypto, brokers, sportsbooks, wallets et briques d’infrastructure. Filtrez par catégorie ou statut, triez les colonnes, et ouvrez une ligne pour lire le contexte.",
+  snap:"Données relevées le 4 octobre 2026. Les chiffres de volume ne sont pas homogènes d’une source à l’autre : la période et la méthode sont indiquées dans chaque cellule.",
+  shareTitle:"Part du volume sur les 4 venues suivies par DeFi Rate (2 sept. – 1er oct. 2026)",
+  barLabel:"Kalshi 80 %, Polymarket US 12 %, Polymarket International 6 %, Novig 2 %",
+  pct:["80 %","12 %","6 %"], novig:"Novig 2 %",
+  caption:"Kalshi a traité 60,7 Md$ de contrats en septembre 2026, son record. Les venues on-chain hors Polymarket pèsent quelques pourcents au plus.",
+  valos:[["~40 Md$","Kalshi, tour en finalisation"],["21 Md$","Polymarket, sept. 2026"],["5 Md$","OG.com, sept. 2026"],["~2 Md$","Novig, tour en discussion"],["1,3 Md$","Underdog, rachat par IG"]],
+  valosLabel:"Dernières valorisations connues",
+  reading:[
+   ["Un leader net, porté par le sport","Kalshi capte environ 80 % du volume suivi ; le sport représente plus de 80 % de son activité. Polymarket reste la référence on-chain et médiatique, mais son volume international recule au profit de sa version US."],
+   ["La licence n’est plus un fossé","Chacun achète ou obtient son DCM/DCO : Polymarket (QCEX), DraftKings (Railbird), Underdog (Aristotle), Fanatics (BGC), Robinhood (Rothera). Novig et ProphetX ont été agréés en quelques mois."],
+   ["La bataille se joue sur la distribution","Brokers et wallets deviennent des agrégateurs : Robinhood route vers 4 exchanges, Jupiter, Trust Wallet et Binance Wallet combinent plusieurs venues. Le produit se banalise, l’accès client fait la différence."],
+   ["On-chain : Hyperliquid et le cluster BNB","HIP-4 est permissionless depuis fin août ; predict.fun et Opinion dominent BNB Chain. La TradFi arrive par les produits financiers (Cboe, CME, Schwab), loin du sport et de la politique."]],
+  readingLabel:"Lecture du marché",
+  catsLabel:"Filtrer par catégorie", all:"Tous",
+  search:"Rechercher une plateforme, une entreprise, une chaîne…", searchLabel:"Rechercher",
+  statusAll:"Tous les statuts", statusLabel:"Filtrer par statut",
+  statusOpts:{live:"Live",partial:"Partiel ou bêta",pending:"En attente d’agrément",announced:"Annoncé, pas encore sorti",rumor:"En développement, non officiel",closed:"Fermé ou absorbé"},
+  regAll:"Toutes les régulations", regLabel:"Filtrer par régulation",
+  regOpts:{cftc:"CFTC (US)",sec:"SEC (options US)",offshore:"Offshore ou autre licence",defi:"Aucune (DeFi)",na:"Non applicable"},
+  reset:"Réinitialiser",
+  thName:"Plateforme",thStatus:"Statut",thWeight:"Poids dans le marché",thCreator:"Créateur / maison-mère",thDiff:"Point de différenciation",
+  thReg:"Statut réglementaire",thChain:"Blockchain / rails",thModel:"Modèle de marché et résolution",thVol:"Volume, open interest, traction",thFund:"Levées et valorisation",
+  count:(n,t)=>`${n} acteur${n>1?"s":""} affiché${n>1?"s":""} sur ${t}`,
+  empty:"Aucun acteur ne correspond à ces filtres.", clear:"Réinitialiser les filtres",
+  show:"Voir le contexte", hide:"Masquer le contexte", noMore:"Pas d’information complémentaire.", open:n=>`Ouvrir le site de ${n}`,
+  howTitle:"Comment lire ce tableau",
+  how1:"Le « poids » est une appréciation d’analyste (1 à 5 barres) qui combine volume, distribution et capacité d’influence ; il sert à trier, pas à mesurer.",
+  how2:"« n.d. » signifie qu’aucun chiffre fiable n’a été trouvé. Les volumes de contrats (notionnel) surestiment l’argent réellement engagé, surtout sur les combinés.",
+  srcTitle:"Principales sources",
+  sources:["DeFi Rate — volumes Kalshi et parts de marché","DeFi Rate — volumes Polymarket","The Paypers — Kalshi à ~40 Md$","Wu Blockchain — Polymarket à 21 Md$","Covers — Robinhood × OG.com","Bankless — HIP-4 permissionless","Datawallet — HIP-4 expliqué","Covers — IG Group rachète Underdog","Cboe — lancement de Cboe Predicts","Legal Sports Report — projet Meta « Arena »","Dropstab — volumes des venues on-chain","DefiLlama — catégorie Prediction Markets","Kairos — annuaire des outils et terminaux","The Block — Polymarket règle ses marchés actions et matières premières avec Pyth","Pyth — les données Kalshi on-chain","The Block — Polymarket adopte Chainlink pour les marchés de prix","RedStone — les données Kalshi on-chain"],
+  cats:{pure:"Plateforme dédiée régulée",onchain:"Protocole on-chain",crypto:"Exchange crypto (segment)",broker:"Broker et bourse TradFi",sport:"Sportsbook, DFS et média",wallet:"Wallet et agrégateur",infra:"Infra, oracle et data"},
+  status:{live:"Live",partial:"Partiel ou bêta",pending:"En attente d’agrément",announced:"Annoncé",rumor:"Non officiel",closed:"Fermé ou absorbé"},
+  weight:{5:"Leader",4:"Majeur",3:"Significatif",2:"Challenger",1:"Niche ou pré-lancement"}
+ }
+};
+const SOURCE_URLS = [
+ "https://defirate.com/prediction-markets/volume/kalshi/",
+ "https://defirate.com/prediction-markets/volume/polymarket/",
+ "https://thepaypers.com/crypto-web3-and-cbdc/news/kalshi-nears-usd-40-bln-valuation-in-funding-round-ahead-of-ipo",
+ "https://wublock.substack.com/p/september-vc-report-crypto-vc-funding",
+ "https://www.covers.com/industry/robinhood-expands-prediction-market-access-with-og-com-partnership-sept-8-2026",
+ "https://www.bankless.com/read/hyperliquid-s-hip-4-era",
+ "https://www.datawallet.com/crypto/hip-4-explained-hyperliquid-upgrade",
+ "https://www.covers.com/industry/ig-group-to-buy-underdog-expand-us-prediction-market-push-july-30-2026",
+ "https://ir.cboe.com/news/news-details/2026/Cboe-Introduces-Cboe-Predicts-Launching-First-Products-in-New-Prediction-Markets-Suite/default.aspx",
+ "https://www.legalsportsreport.com/?p=267622",
+ "https://news.dropstab.com/research/crypto-prediction-markets-a-new-trend",
+ "https://defillama.com/protocols/prediction-market",
+ "https://github.com/kairoslive/prediction-market-trading-tools-and-terminals",
+ "https://www.theblock.co/post/396200/polymarket-taps-pyth-network-to-resolve-new-us-equity-and-commodity-markets",
+ "https://www.pyth.network/blog/pyth-network-partners-with-kalshi-to-deliver-real-time-prediction-market-data-onchain",
+ "https://www.theblock.co/post/370444/polymarket-turns-to-chainlink-oracles-for-resolution-of-price-focused-bets",
+ "https://blog.redstone.finance/2025/10/23/redstone-kalshi-powering-live-prediction-market-data-onchain"
+];
+const STATUS_META = {live:["s-live",1],partial:["s-partial",2],pending:["s-pending",3],announced:["s-announced",4],rumor:["s-rumor",5],closed:["s-closed",6]};
+const D = [
+{n:"Kalshi",c:"pure",s:"live",w:5,cr:"Kalshi Inc. — Tarek Mansour et Luana Lopes Lara (2018)",
+ d:"Premier exchange régulé CFTC dédié aux event contracts ; leader mondial en volume, tiré par le sport (plus de 80 % de son volume) et par une distribution massive (Robinhood, Coinbase, Webull, Phantom, Jupiter).",
+ r:"CFTC — DCM + DCO (Kalshi Klear)",rg:"cftc",ch:"Off-chain (USD) ; positions tokenisées sur Solana via DFlow et Jupiter",
+ m:"Carnet d’ordres central avec market makers ; résolution par l’exchange selon les règles du contrat",
+ v:"60,7 Md$ de contrats en sept. 2026 (record) ; 244,5 Md$ depuis janvier ; ~80 % du volume suivi",
+ f:"Série F 1 Md$ à 22 Md$ (mai 2026) ; tour à ~40 Md$ en finalisation (oct. 2026) ; revenus annualisés ~4 Md$ (août 2026)",
+ x:"A lancé des perpétuels crypto en avril 2026. IPO envisagée pour 2027. Contentieux avec plusieurs États : le 6e circuit a jugé en sept. 2026 que l’Ohio et le Tennessee peuvent réguler ses contrats sportifs. Ses données de marché sont publiées on-chain par Pyth (13 oct. 2025) et RedStone (oct. 2025).",u:"https://kalshi.com"},
+{n:"Polymarket (International)",c:"onchain",s:"live",w:5,cr:"Polymarket / Blockratize Inc. — Shayne Coplan (2020)",
+ d:"Référence on-chain et auto-custodiale, très forte sur politique, géopolitique et crypto ; ses cotes sont reprises par les médias et la finance (ICE, Google Finance).",
+ r:"Offshore (hors US)",rg:"offshore",ch:"Polygon ; collatéral pUSD adossé 1:1 à l’USDC depuis avril 2026",
+ m:"Carnet d’ordres hybride (matching off-chain, règlement on-chain via Conditional Tokens) ; résolution par UMA (marchés d’événements), Chainlink (marchés crypto de 5 et 15 minutes) et Pyth (actions, indices, matières premières)",
+ v:"4,6 Md$ en sept. 2026 ; ~6 % du volume suivi",
+ f:"1 Md$ à 21 Md$ post-money mené par 1789 Capital (sept. 2026) ; ICE détient une position d’environ 1,6 Md$",
+ x:"Token POLY et airdrop confirmés par la direction, sans date. Rachats : QCEX (licence US) et Dome (API multi-venues). Distribution via MetaMask, Trust Wallet, Jupiter.",u:"https://polymarket.com"},
+{n:"Polymarket US",c:"pure",s:"live",w:4,cr:"QCX LLC (filiale de Polymarket)",
+ d:"Version régulée US relancée en décembre 2025, orientée sport ; les combinés font plus de la moitié de son volume.",
+ r:"CFTC — DCM + DCO (ex-QCEX, racheté 112 M$)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres central ; combinés",
+ v:"≈2,8 Md$ la semaine du 21 au 27 sept. 2026 ; 12 à 15 % du volume suivi",
+ f:"Voir Polymarket",
+ x:"Poursuivi par l’État de New York. Recrutement de Lisa Mantil (ex-Goldman Sachs) pour attirer les flux institutionnels et les blocs.",u:"https://polymarket.us"},
+{n:"OG.com",c:"pure",s:"live",w:4,cr:"Crypto.com (Kris Marszalek) — spin-off indépendant, CEO Nick Lundgren",
+ d:"Exchange et chambre de compensation en marque blanche : alimente Fanatics Markets, Truth Predict, High Roller, Prospect Markets et une partie des flux Robinhood.",
+ r:"CFTC — DCM + DCO (CDNA, ex-Nadex)",rg:"cftc",ch:"Off-chain ; dépôts crypto possibles",
+ m:"Carnet d’ordres central ; contrats listés par l’exchange",
+ v:"Plus gros partenariat B2B du secteur avec Robinhood (football US, sept. 2026)",
+ f:"Valorisé 5 Md$ lors de l’entrée de Robinhood au capital (sept. 2026) ; Crypto.com valorisé 20 Md$",
+ x:"Lancé le 3 février 2026. Vise ensuite les futures et les perpétuels.",u:"https://og.com"},
+{n:"Novig",c:"pure",s:"live",w:3,cr:"Novig Inc. (New York)",
+ d:"Exchange sport peer-to-peer à frais réduits, passé du modèle sweepstakes au cadre fédéral.",
+ r:"CFTC — DCM via Ludlow Exchange (juin 2026)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres P2P, sans contrepartie « maison »",
+ v:"~2 % du volume suivi par DeFi Rate (sept. 2026)",
+ f:"Série B 75 M$ à 500 M$ (2026) ; nouveau tour visé à ~2 Md$ (oct. 2026)",
+ x:"Fait partie des premiers DCM sportifs agréés en 2026 avec ProphetX.",u:"https://novig.us"},
+{n:"ProphetX",c:"pure",s:"live",w:2,cr:"ProphetX — Dean Sisun et Jake Benzaquen",
+ d:"Exchange 100 % sport avec clearing intégré et combinés négociés en RFQ entre contreparties.",
+ r:"CFTC — DCM + DCO (juin 2026)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres + mécanisme RFQ pour les parlays",
+ v:"n.d.",f:"n.d.",
+ x:"Lancé cinq jours après son agrément, le délai le plus court de l’ère CFTC.",u:"https://prophetx.co"},
+{n:"PredictIt",c:"pure",s:"live",w:2,cr:"Aristotle Inc. — John Phillips",
+ d:"Marché politique historique (2014) sous cadre académique, avec plafonds de mise par contrat ; pas de sport.",
+ r:"CFTC — lettre de no-action (cadre de recherche)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres, plafonds de position",
+ v:"n.d.",f:"n.d.",
+ x:"L’exchange Aristotle (DCM/DCO) a été vendu à Underdog en mars 2026 ; PredictIt reste chez Aristotle et continue à l’identique.",u:"https://www.predictit.org"},
+{n:"Sporttrade",c:"pure",s:"pending",w:1,cr:"Sporttrade (US)",
+ sn:"Demande de DCM déposée début 2026",
+ d:"Ancien exchange de paris sous licence d’État qui bascule vers un exchange sportif fédéral.",
+ r:"CFTC — DCM en cours d’instruction",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Exchange sportif à carnet d’ordres",
+ v:"n.d.",f:"n.d.",x:"D’autres demandes sportives sont aussi en attente, dont RSBIX.",u:""},
+
+{n:"Hyperliquid — HIP-4 (Outcomes)",c:"crypto",s:"live",w:3,cr:"Hyperliquid Labs — Jeff Yan",
+ d:"Outcome markets intégrés au moteur HyperCore : même compte et même marge que les perps, liquidité existante, et déploiement permissionless contre 500 000 HYPE stakés.",
+ r:"Aucune (DeFi, accès mondial)",rg:"defi",ch:"Hyperliquid L1 (HyperCore) ; règlement en USDC (USDH prévu)",
+ m:"Carnet d’ordres on-chain, contrats entièrement collatéralisés sans levier ; résolution par les validateurs sur sources objectives, via 7 templates approuvés (prix, décisions de taux)",
+ v:"~100 M$ le premier mois complet ; près de 1 000 marchés suivis (sept. 2026)",
+ f:"Pas de levée externe",
+ x:"Annoncé le 2 février 2026, mainnet le 2 mai, multi-outcomes le 7 mai, permissionless fin août 2026. Gratuit jusqu’à fin août. Premier déployeur tiers : Outcome.",u:"https://app.hyperliquid.xyz"},
+{n:"Coinbase Prediction Markets",c:"crypto",s:"live",w:3,cr:"Coinbase Global — Brian Armstrong",
+ d:"Prédictions intégrées à l’« everything exchange », financées en USD ou en USDC ; donne accès à tous les marchés Kalshi.",
+ r:"Via Kalshi (DCM) ; Coinbase Financial Markets",rg:"cftc",ch:"Off-chain ; financement USDC possible",
+ m:"Routage vers Kalshi ; d’autres venues annoncées",
+ v:"n.d.",f:"A racheté The Clearing Company (fondée par Toni Gemayel, ex-Polymarket et Kalshi) fin 2025",
+ x:"Disponible dans les 50 États depuis le 28 janvier 2026.",u:"https://www.coinbase.com"},
+{n:"Gemini Predictions",c:"crypto",s:"live",w:2,cr:"Gemini Space Station — Tyler et Cameron Winklevoss",
+ d:"Exchange propre et pari stratégique central : Gemini a quitté le Royaume-Uni, l’UE et l’Australie pour se concentrer sur les prédictions aux US ; fil personnalisé par IA (Grok).",
+ r:"CFTC — DCM (Gemini Titan)",rg:"cftc",ch:"Off-chain",
+ m:"Carnet d’ordres central",
+ v:"0,4 M$ de revenus et ~20 000 utilisateurs au T1 2026",f:"Société cotée (Nasdaq : GEMI)",
+ x:"Lancé mi-décembre 2025.",u:"https://www.gemini.com"},
+{n:"Kraken",c:"crypto",s:"announced",w:1,cr:"Kraken (Payward Inc.)",
+ sn:"Lancement annoncé pour 2026 ; aucun lancement confirmé trouvé au 4 oct.",
+ d:"Brique prévue dans la stratégie multi-actifs de Kraken, à côté des actions tokenisées xStocks.",
+ r:"À préciser",rg:"na",ch:"À préciser",m:"À préciser",v:"—",f:"n.d.",
+ x:"Kraken est sponsor officiel de la Coupe du monde 2026 côté crypto.",u:""},
+
+{n:"Robinhood Prediction Markets",c:"broker",s:"live",w:5,cr:"Robinhood Markets — Vlad Tenev",
+ d:"Hub multi-venues qui route chaque contrat vers Kalshi, ForecastEx, Rothera (sa coentreprise) ou OG.com selon la disponibilité ; énorme base de clients retail.",
+ r:"FCM ; exchange Rothera (JV avec Susquehanna) DCM + DCO live depuis juin 2026",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Smart routing entre exchanges",
+ v:"156 M$ de revenus « event contracts » au T2 2026 ; 2e venue US par volume régulé",
+ f:"Société cotée (HOOD) ; participations dans Crypto.com et OG.com (sept. 2026)",
+ x:"Les prédictions sont le segment à la plus forte croissance du groupe selon son CEO.",u:"https://robinhood.com"},
+{n:"Interactive Brokers — ForecastEx",c:"broker",s:"live",w:3,cr:"Interactive Brokers — Thomas Peterffy",
+ d:"Exchange propre orienté macro, économie et climat ; IBKR distribue aussi les contrats Cboe Predicts.",
+ r:"CFTC — DCM + DCO",rg:"cftc",ch:"Off-chain (USD)",m:"Carnet d’ordres central",
+ v:"n.d.",f:"Société cotée (IBKR)",x:"ForecastEx fait partie des venues routées par Robinhood.",u:"https://forecastex.com"},
+{n:"Cboe Predicts",c:"broker",s:"live",w:2,cr:"Cboe Global Markets",
+ d:"Binaires sur le Mini-S&P 500 (XSP) sous le régime des options listées, compensés par l’OCC : la seule offre qui échappe à la CFTC.",
+ r:"SEC (options listées), compensation OCC",rg:"sec",ch:"Off-chain (USD)",
+ m:"Options binaires avec paiement fixe, et variante « Plus Zone » à paiement partiel",
+ v:"n.d.",f:"Société cotée (CBOE)",
+ x:"Lancé le 23 juin 2026 sur Interactive Brokers ; Schwab et d’autres brokers doivent suivre.",u:"https://www.cboe.com"},
+{n:"Charles Schwab",c:"broker",s:"announced",w:1,cr:"Charles Schwab Corp.",
+ sn:"Annoncé en juin 2026 « dans les prochains mois »",
+ d:"Uniquement des événements financiers objectivement vérifiables (S&P 500) : ni sport, ni politique.",
+ r:"SEC (via Cboe)",rg:"sec",ch:"Off-chain",m:"Distribution des contrats Cboe",
+ v:"—",f:"Société cotée (SCHW)",x:"39,5 M de comptes actifs à distribuer en cas de lancement.",u:""},
+{n:"CME Group — event contracts",c:"broker",s:"live",w:3,cr:"CME Group",
+ d:"La plus grande bourse de dérivés liste des event contracts et fournit ceux de FanDuel Predicts.",
+ r:"CFTC — DCM + DCO",rg:"cftc",ch:"Off-chain (USD)",m:"Contrats listés par CME, carnet d’ordres",
+ v:"n.d.",f:"Société cotée (CME)",x:"Partenaire exclusif de FanDuel (Flutter).",u:"https://www.cmegroup.com"},
+{n:"ICE (Intercontinental Exchange)",c:"broker",s:"live",w:3,cr:"Intercontinental Exchange (maison-mère du NYSE)",
+ d:"Pas de plateforme propre : actionnaire majeur de Polymarket et distributeur de ses données aux institutionnels.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",
+ f:"Position d’environ 1,6 Md$ dans Polymarket",x:"Illustre l’arrivée des grandes bourses par la donnée plutôt que par le trading.",u:"https://www.ice.com"},
+{n:"tastytrade",c:"broker",s:"live",w:1,cr:"IG Group",
+ d:"Accès aux prédictions pour une clientèle de traders d’options actifs.",
+ r:"Via un DCM partenaire",rg:"cftc",ch:"Off-chain",m:"Distribution",v:"n.d.",f:"Filiale d’IG Group",
+ x:"Lancé fin juillet 2026, trois jours avant l’annonce du rachat d’Underdog par IG.",u:"https://tastytrade.com"},
+{n:"Webull",c:"broker",s:"live",w:1,cr:"Webull Corp.",
+ d:"Event contracts Kalshi intégrés à l’app de courtage retail.",
+ r:"Via Kalshi (DCM)",rg:"cftc",ch:"Off-chain",m:"Routage vers Kalshi",v:"n.d.",f:"Société cotée (BULL)",x:"",u:""},
+{n:"Wealthsimple",c:"broker",s:"announced",w:1,cr:"Wealthsimple (Canada)",
+ sn:"Partenariat annoncé avec Kalshi, lancement à confirmer",
+ d:"Porte d’entrée canadienne : environ 4 000 contrats Kalshi pour les investisseurs particuliers.",
+ r:"Canada (via Kalshi)",rg:"offshore",ch:"Off-chain",m:"Routage vers Kalshi",v:"—",f:"n.d.",x:"",u:""},
+
+{n:"DraftKings Predictions",c:"sport",s:"live",w:3,cr:"DraftKings Inc.",
+ d:"Exchange propre DKeX (issu du rachat de Railbird) intégré à l’app ; DraftKings agit aussi comme market maker.",
+ r:"CFTC — DCM (DKeX) ; introducing broker NFA",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres, avec le groupe comme teneur de marché",
+ v:"Volume par client supérieur au handle sportsbook par client (avril 2026, JPMorgan)",f:"~300 M$ de marketing prédictions prévus en 2026",
+ x:"Les contrats sportifs sont retirés dans les États où le sportsbook DraftKings opère. DKeX live depuis juin 2026.",u:"https://predictions.draftkings.com"},
+{n:"FanDuel Predicts",c:"sport",s:"live",w:3,cr:"Flutter Entertainment (avec CME Group)",
+ d:"App séparée du sportsbook, contrats listés par CME ; sport uniquement là où le pari sportif en ligne n’est pas légal, et pas de politique.",
+ r:"CFTC via CME ; FanDuel Prediction Markets LLC (FCM)",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Contrats CME ; FanDuel est aussi market maker",
+ v:"n.d.",f:"~300 M$ de marketing prédictions prévus en 2026",
+ x:"Lancé en décembre 2025. Présent dans les 50 États et Porto Rico.",u:"https://predicts.fanduel.com"},
+{n:"Fanatics Markets",c:"sport",s:"live",w:2,cr:"Fanatics — Michael Rubin",
+ d:"Marque grand public du merchandising sportif, prix et liquidité fournis par CDNA (Crypto.com) ; rachat en cours d’un exchange et d’une chambre de compensation à BGC Group.",
+ r:"Introducing broker NFA (ex-Paragon) ; DCM via CDNA",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Distribution des contrats CDNA",
+ v:"Live dans 23 États et 4 territoires",f:"Acquisition d’exchange BGC annoncée en juillet 2026",
+ x:"Partenariat Coupe du monde avec ADI Predictstreet.",u:"https://fanaticsmarkets.com"},
+{n:"Underdog Predict",c:"sport",s:"live",w:3,cr:"Underdog — Jeremy Levine (en cours de rachat par IG Group)",
+ d:"3e venue US par volume régulé ; exchange propre depuis le 18 juillet 2026 ; mélange DFS et prédictions dans les combinés.",
+ r:"CFTC — DCM + DCO (ex-Aristotle Exchange) ; FCM",rg:"cftc",ch:"Off-chain (USD)",
+ m:"Carnet d’ordres et combos",
+ v:"466 M$ de revenus nets sur 12 mois à fin juin 2026 (surtout DFS)",
+ f:"Rachat par IG Group jusqu’à 1,3 Md$ (annoncé le 30 juillet 2026)",
+ x:"S’appuyait auparavant sur Crypto.com puis Kalshi.",u:"https://underdogfantasy.com"},
+{n:"PrizePicks Predictions",c:"sport",s:"live",w:2,cr:"PrizePicks",
+ d:"Prédictions intégrées à l’app de fantasy sport ; distribue des contrats d’exchanges tiers (Kalshi, Polymarket).",
+ r:"FCM enregistré NFA",rg:"cftc",ch:"Off-chain",m:"Distribution",v:"n.d.",f:"n.d.",x:"",u:"https://www.prizepicks.com"},
+{n:"Truth Predict",c:"sport",s:"partial",w:1,cr:"Trump Media & Technology Group",
+ sn:"En bêta depuis février 2026, pas de lancement large",
+ d:"Prédictions intégrées au réseau social Truth Social ; les « gems » gagnés sur la plateforme sont convertibles en CRO.",
+ r:"CFTC via CDNA (Crypto.com)",rg:"cftc",ch:"Off-chain ; CRO",m:"Distribution des contrats CDNA",
+ v:"—",f:"Société cotée (DJT)",x:"Annoncé le 28 octobre 2025.",u:""},
+{n:"Meta « Arena »",c:"sport",s:"rumor",w:1,cr:"Meta Platforms",
+ sn:"Projet révélé par le New York Times (juin 2026), non confirmé par Meta",
+ d:"App autonome qui puiserait dans l’audience de Facebook et Instagram ; probablement en points au départ, argent réel non exclu.",
+ r:"À préciser",rg:"na",ch:"—",m:"—",v:"—",f:"—",
+ x:"Meta avait fermé en 2022 une première app de prévision, Forecast.",u:""},
+
+{n:"predict.fun",c:"onchain",s:"live",w:3,cr:"predict.fun (fondateur : dingaling) — soutenu par YZi Labs",
+ d:"Collatéral rémunéré (les USDT déposés sont placés sur Venus) et distribution via Binance Wallet et Trust Wallet.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"BNB Chain (+ Blast)",
+ m:"Carnet d’ordres ; frais taker prélevés au règlement",
+ v:"1,7 Md$ cumulés et 125 000 utilisateurs (printemps 2026) ; 579 M$ de volume taker en avril",
+ f:"Investissement renforcé de YZi Labs ; rachat de Probable (incubé par PancakeSwap) en mars 2026",
+ x:"Probable, lancé par PancakeSwap et YZi Labs fin 2025 (zéro frais, oracle UMA), est désormais intégré à predict.fun.",u:"https://predict.fun"},
+{n:"Opinion (Opinion Labs)",c:"onchain",s:"live",w:3,cr:"Opinion Labs — soutenu par YZi Labs",
+ d:"Positionnement « macro-first » (taux, matières premières) plutôt que divertissement ; résolution assistée par IA.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"BNB Chain",
+ m:"Carnet d’ordres ; oracle assisté par IA",
+ v:"3,1 Md$ de notionnel cumulé en 3 semaines après le lancement (oct.–nov. 2025) ; 376 M$ de volume taker en avril 2026",
+ f:"Pré-série A de 20 M$ (février 2026 : Hack VC, Jump Crypto, Primitive Ventures)",
+ x:"Mainnet lancé le 24 octobre 2025.",u:"https://opinion.trade"},
+{n:"Limitless",c:"onchain",s:"live",w:2,cr:"Limitless Labs",
+ d:"Marchés ultra-courts (minutes, heures) sur les prix crypto, réglés sur une moyenne Chainlink plutôt qu’un prix spot ; premier acteur sur Base.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Base",
+ m:"Carnet d’ordres + AMM ; oracle Chainlink (TWAP)",
+ v:"205 M$ de volume taker en avril 2026",f:"n.d.",x:"Zéro frais maker.",u:"https://limitless.exchange"},
+{n:"Myriad Markets",c:"onchain",s:"live",w:2,cr:"Dastan (maison-mère de Decrypt)",
+ d:"Marchés « media-native » intégrés aux articles et aux apps ; premier fournisseur choisi par Trust Wallet.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Abstract, BNB Chain, Linea",
+ m:"Carnet d’ordres + AMM ; oracles Chainlink",
+ v:"100 M$ de volume cumulé et plus de 400 000 traders",
+ f:"Soutiens : MoonPay Ventures, Tom Lee, ConsenSys, Hack VC",x:"",u:"https://myriad.markets"},
+{n:"ADI Predictstreet",c:"onchain",s:"partial",w:2,cr:"Finstreet Ltd (groupe IHC, Abu Dhabi)",
+ sn:"Accès géographique limité ; US en attente de licences",
+ d:"Partenaire prédiction officiel de la FIFA pour la Coupe du monde 2026, et accord mondial avec DAZN ; rails ADI Chain et stablecoin.",
+ r:"Licence Gibraltar",rg:"offshore",ch:"ADI Chain (L2 institutionnel)",
+ m:"Marchés on-chain réglés en stablecoin",
+ v:"n.d.",f:"Adossé à IHC (Abu Dhabi)",
+ x:"Le partenariat DAZN prévoit à terme un stablecoin à la marque DAZN.",u:""},
+{n:"SX Bet",c:"onchain",s:"live",w:1,cr:"SX Network",
+ d:"Exchange sportif on-chain avec l’outillage développeur le plus complet du segment.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Arbitrum",m:"Carnet d’ordres P2P",v:"n.d.",f:"n.d.",x:"",u:"https://sx.bet"},
+{n:"Sport.fun",c:"onchain",s:"live",w:1,cr:"Sport.fun",
+ d:"Fantasy sport tokenisé : on échange des parts fractionnées d’athlètes, payées selon leurs performances réelles.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Base",m:"Marché de parts d’athlètes",v:"TVL ~2,4 M$ (DefiLlama)",f:"n.d.",x:"",u:""},
+{n:"Zeitgeist",c:"onchain",s:"live",w:1,cr:"Zeitgeist PM",
+ d:"Protocole modulaire pour concevoir ses propres structures de marché, avec gouvernance on-chain.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Polkadot",m:"AMM et carnet d’ordres",v:"n.d.",f:"n.d.",x:"",u:"https://zeitgeist.pm"},
+{n:"Drift BET",c:"onchain",s:"live",w:1,cr:"Drift Protocol",
+ d:"Marchés de prédiction adossés à une plateforme de perps Solana, avec collatéral partagé.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Solana",m:"Carnet d’ordres de Drift",v:"Activité marginale ; statut à vérifier",f:"n.d.",x:"",u:""},
+{n:"Augur (nouvelle plateforme)",c:"onchain",s:"announced",w:1,cr:"Lituus Foundation",
+ sn:"Nouvelle plateforme annoncée sans date",
+ d:"Pionnier des marchés prédictifs on-chain (2015) en plein redémarrage ; une équipe distincte prépare une nouvelle plateforme.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Ethereum",m:"À préciser",v:"—",f:"Trésorerie Augur (REP)",x:"Voir aussi Augur Lituus dans l’infrastructure.",u:"https://augur.net"},
+
+{n:"Binance Wallet — Prediction",c:"wallet",s:"live",w:3,cr:"Binance",
+ d:"Accès en un clic depuis l’app Binance, frais de gas sponsorisés et wallet MPC sans clé ; agrège des venues tierces, à commencer par predict.fun.",
+ r:"Selon la région (non disponible partout)",rg:"defi",ch:"BNB Chain",
+ m:"Front-end ; liquidité et résolution de la venue sous-jacente",
+ v:"n.d.",f:"—",x:"Lancé le 9 avril 2026 après une bêta en mars.",u:""},
+{n:"Jupiter Predict",c:"wallet",s:"live",w:2,cr:"Jupiter (Solana)",
+ d:"Agrège Kalshi et Polymarket sur Solana, avec ordres limites ; seule venue Polymarket sur Solana.",
+ r:"Bloqué aux US et en Corée du Sud",rg:"defi",ch:"Solana",
+ m:"Agrégation ; suit la résolution de la venue d’origine, ses frais s’ajoutent à ceux de la venue",
+ v:"n.d.",f:"—",x:"",u:"https://jup.ag"},
+{n:"Phantom Predictions",c:"wallet",s:"live",w:2,cr:"Phantom",
+ d:"Marchés Kalshi tokenisés directement sur l’écran d’accueil du wallet, avec chat entre amis ; financement en SOL ou CASH.",
+ r:"Via Kalshi",rg:"cftc",ch:"Solana (via DFlow)",m:"Positions tokenisées Kalshi",
+ v:"Plus de 98 % du volume DFlow passe par Phantom (début 2026)",f:"—",x:"",u:"https://phantom.com"},
+{n:"MetaMask Predictions",c:"wallet",s:"live",w:2,cr:"Consensys",
+ d:"Intégration native et exclusive de Polymarket dans MetaMask Mobile.",
+ r:"Selon la région",rg:"defi",ch:"Polygon (Polymarket)",m:"Front-end Polymarket",
+ v:"n.d.",f:"—",x:"Lancé le 4 décembre 2025.",u:"https://metamask.io"},
+{n:"Trust Wallet Predictions",c:"wallet",s:"live",w:2,cr:"Trust Wallet (écosystème Binance)",
+ d:"Onglet multi-venues : Myriad, Polymarket (depuis 14 chaînes via MoonPay) et predict.fun, sans frais de plateforme.",
+ r:"Selon la région",rg:"defi",ch:"Polygon, BNB Chain, Abstract",m:"Agrégation",
+ v:"Base de 220 M d’utilisateurs",f:"—",x:"",u:"https://trustwallet.com/prediction-markets"},
+{n:"Byreal Predict",c:"wallet",s:"live",w:1,cr:"Byreal (DEX Solana incubé par Bybit)",
+ d:"Permet de trader les marchés Polymarket depuis Solana.",
+ r:"Selon la région",rg:"defi",ch:"Solana",m:"Accès aux marchés Polymarket",v:"n.d.",f:"—",x:"",u:""},
+
+{n:"UMA (Optimistic Oracle)",c:"infra",s:"live",w:4,cr:"Risk Labs",
+ d:"Oracle optimiste qui résout les marchés d’événements de Polymarket : une réponse proposée devient définitive faute de contestation. Polymarket est passé à la version « Managed » (Managed Optimistic Oracle V2), qui limite les propositions de résolution à une liste blanche. Les marchés de prix passent désormais par Chainlink et Pyth.",
+ r:"Non applicable",rg:"na",ch:"Ethereum et L2 (dont Polygon)",m:"Proposition, période de contestation, vote des détenteurs d’UMA",
+ v:"—",f:"Token UMA",x:"Critiqué lors de litiges de résolution très médiatisés.",u:"https://uma.xyz"},
+{n:"Chainlink",c:"infra",s:"live",w:4,cr:"Chainlink Labs",
+ d:"Flux de prix à faible latence (Data Streams) et déclenchement automatique du règlement (Automation). Règle les marchés crypto de 5 et 15 minutes de Polymarket, ainsi que des marchés de prix de Limitless et Myriad.",
+ r:"Non applicable",rg:"na",ch:"Multichaîne",m:"Oracle pull : un rapport signé est vérifié on-chain à la demande ; moyennes temporelles (TWAP)",
+ v:"Plus de 9 Md$ de volume cumulé sur les marchés Polymarket réglés par Chainlink (selon Chainlink, août 2026)",f:"Token LINK",
+ x:"Partenariat avec Polymarket annoncé le 12 septembre 2025, en service sur Polygon. Les deux équipes ont annoncé tester l’usage de Chainlink sur des questions plus subjectives, pour réduire le recours au vote social.",u:"https://chain.link"},
+{n:"Pyth Network",c:"infra",s:"live",w:3,cr:"Pyth Network, avec Douro Labs (développeur de Pyth Pro)",
+ d:"Oracle de prix « first-party » : les prix viennent directement des acteurs de marché (trading firms, market makers). Règle les marchés quotidiens de Polymarket sur actions, indices, or, argent et pétrole, et publie on-chain les cotes de Kalshi sur plus de 100 chaînes.",
+ r:"Non applicable",rg:"na",ch:"Multichaîne (plus de 100 chaînes, modèle pull)",m:"Prix agrégés depuis plusieurs publieurs ; Pyth Terminal affiche le prix de référence qui sert au règlement",
+ v:"Réseau ayant sécurisé plus de 1,6 T$ de valeur cumulée (selon Pyth)",f:"Token PYTH",
+ x:"Kalshi a rejoint Pyth comme publieur de données le 13 octobre 2025 : ses prix de marché sont consultables on-chain. Polymarket a intégré Pyth comme source de résolution le 2 avril 2026, avec le lancement de Pyth Terminal, pour des marchés « hausse/baisse » et « clôture » sur plus d’une douzaine d’actions américaines et des matières premières.",u:"https://www.pyth.network"},
+{n:"RedStone",c:"infra",s:"live",w:2,cr:"RedStone (RedStone Finance)",
+ d:"Oracle modulaire qui diffuse aussi les données de marché de Kalshi on-chain, sur plus de 110 réseaux, en modes pull et push.",
+ r:"Non applicable",rg:"na",ch:"Multichaîne (plus de 110 réseaux)",m:"Oracle pull et push ; flux de données Kalshi",
+ v:"—",f:"n.d.",
+ x:"Partenariat avec Kalshi annoncé le 23 octobre 2025. Au lancement, trois jeux de données : l’élection municipale de New York, le candidat démocrate de 2028 et le nombre de baisses de taux en 2025. RedStone se présente comme l’un des fournisseurs d’oracle de Kalshi et le seul en architecture pull sur plus de 110 réseaux.",u:"https://redstone.finance"},
+{n:"Gnosis Conditional Tokens",c:"infra",s:"live",w:3,cr:"Gnosis",
+ d:"Standard de tokens d’issue (CTF) sur lequel repose le règlement de Polymarket.",
+ r:"Non applicable",rg:"na",ch:"EVM",m:"Tokens conditionnels ERC-1155",v:"—",f:"—",x:"",u:"https://gnosis.io"},
+{n:"DFlow",c:"infra",s:"live",w:2,cr:"DFlow",
+ d:"Tokenise les contrats Kalshi sur Solana et alimente Phantom.",
+ r:"Non applicable",rg:"na",ch:"Solana",m:"Tokenisation de positions Kalshi",v:"Plus de 100 000 transactions en moins d’un mois après lancement",f:"n.d.",x:"",u:""},
+{n:"Azuro",c:"infra",s:"live",w:2,cr:"Azuro",
+ d:"Infrastructure on-chain de paris et prédictions sportives qui alimente plus de 50 apps.",
+ r:"Non applicable",rg:"na",ch:"Multichaîne (EVM)",m:"Pool de liquidité partagé",v:"n.d.",f:"Token AZUR",x:"",u:"https://azuro.org"},
+{n:"Augur Lituus",c:"infra",s:"partial",w:1,cr:"Lituus Foundation",
+ sn:"Test de migration en cours ; pas de date de lancement général",
+ d:"Oracle généraliste fondé sur des « forks algorithmiques » pour trancher les litiges de résolution, pensé comme infrastructure pour les autres plateformes.",
+ r:"Non applicable",rg:"na",ch:"Ethereum",m:"Oracle à mécanisme de fork",v:"—",f:"REP",x:"Whitepaper publié en janvier 2026, relance annoncée en juillet 2026.",u:"https://augur.net"},
+{n:"Agrégateurs de données (Oddpool, PolyRouter, PMXT)",c:"infra",s:"live",w:1,cr:"Projets indépendants",
+ d:"APIs qui normalisent les données de plusieurs venues (cotes, carnets, historique) pour les traders et les développeurs.",
+ r:"Non applicable",rg:"na",ch:"—",m:"APIs data cross-venues",v:"—",f:"n.d.",x:"PMXT est open source.",u:""},
+{n:"Kairos",c:"infra",s:"live",w:1,cr:"Kairos",
+ d:"Exécution cross-venues (REST et WebSocket) en plus de la donnée agrégée.",
+ r:"Non applicable",rg:"na",ch:"—",m:"Routage d’ordres multi-venues",v:"—",f:"n.d.",x:"Tient un annuaire public de près de 290 outils.",u:""},
+{n:"Stratium",c:"infra",s:"live",w:1,cr:"Stratium",
+ d:"Terminal qui affiche les outcome markets HIP-4 à côté des perps HIP-3 de Hyperliquid.",
+ r:"Non applicable",rg:"na",ch:"Hyperliquid",m:"Front-end",v:"—",f:"n.d.",x:"",u:""},
+{n:"Outcome",c:"infra",s:"live",w:1,cr:"Outcome (outcome.xyz)",
+ d:"Premier déployeur tiers de marchés HIP-4 permissionless sur Hyperliquid.",
+ r:"Aucune (DeFi)",rg:"defi",ch:"Hyperliquid",m:"Déploiement via templates HIP-4",v:"—",f:"n.d.",x:"",u:""},
+{n:"Dome",c:"infra",s:"closed",w:1,cr:"Dome (YC F25) → racheté par Polymarket",
+ sn:"APIs arrêtées le 28 avril 2026",
+ d:"API unifiée multi-venues (Polymarket, Kalshi), absorbée pour renforcer l’écosystème développeur de Polymarket.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",f:"Seed de 4,7 M$ avant rachat",x:"Racheté le 19 février 2026.",u:""},
+{n:"Fireplace",c:"infra",s:"closed",w:1,cr:"Fireplace",
+ sn:"Trading arrêté le 15 août 2026",
+ d:"Terminal social de trading ; utilisateurs migrés vers Polymarket.",
+ r:"Non applicable",rg:"na",ch:"—",m:"—",v:"—",f:"n.d.",x:"",u:""}
+];
+
+const GEN = {
+ "n.d.":"n/a","Non applicable":"Not applicable","Aucune (DeFi)":"None (DeFi)","À préciser":"TBD","Selon la région":"Region-dependent",
+ "Multichaîne":"Multichain","Off-chain ; dépôts crypto possibles":"Off-chain; crypto deposits possible"
+};
+const EN = {
+"Kalshi":{cr:"Kalshi Inc. — Tarek Mansour and Luana Lopes Lara (2018)",d:"First CFTC-regulated exchange built for event contracts; global volume leader, driven by sports (over 80% of its volume) and massive distribution (Robinhood, Coinbase, Webull, Phantom, Jupiter).",ch:"Off-chain (USD); tokenized positions on Solana via DFlow and Jupiter",m:"Central limit order book with market makers; resolved by the exchange under the contract rules",v:"$60.7B in contracts in Sept. 2026 (record); $244.5B year to date; ~80% of tracked volume",f:"$1B Series F at $22B (May 2026); ~$40B round being finalized (Oct. 2026); ~$4B annualized revenue (Aug. 2026)",x:"Launched crypto perpetuals in April 2026. IPO considered for 2027. Litigation with several states: in Sept. 2026 the 6th Circuit ruled that Ohio and Tennessee can regulate its sports contracts. Its market data is published on-chain by Pyth (Oct. 13, 2025) and RedStone (Oct. 2025)."},
+"Polymarket (International)":{d:"The on-chain, self-custodial benchmark, very strong in politics, geopolitics and crypto; its odds are quoted by the media and finance (ICE, Google Finance).",r:"Offshore (outside the US)",ch:"Polygon; pUSD collateral backed 1:1 by USDC since April 2026",m:"Hybrid order book (off-chain matching, on-chain settlement via Conditional Tokens); resolved by UMA (event markets), Chainlink (5- and 15-minute crypto markets) and Pyth (stocks, indices, commodities)",v:"$4.6B in Sept. 2026; ~6% of tracked volume",f:"$1B at $21B post-money led by 1789 Capital (Sept. 2026); ICE holds a ~$1.6B position",x:"POLY token and airdrop confirmed by management, no date set. Acquisitions: QCEX (US license) and Dome (multi-venue API). Distributed via MetaMask, Trust Wallet and Jupiter."},
+"Polymarket US":{cr:"QCX LLC (Polymarket subsidiary)",d:"Regulated US version relaunched in December 2025, sports-focused; parlays make up more than half of its volume.",r:"CFTC — DCM + DCO (ex-QCEX, acquired for $112M)",m:"Central order book; parlays",v:"≈$2.8B in the week of Sept. 21–27, 2026; 12–15% of tracked volume",f:"See Polymarket",x:"Sued by New York State. Hired Lisa Mantil (ex-Goldman Sachs) to attract institutional and block flow."},
+"OG.com":{cr:"Crypto.com (Kris Marszalek) — independent spin-off, CEO Nick Lundgren",d:"White-label exchange and clearinghouse: powers Fanatics Markets, Truth Predict, High Roller, Prospect Markets and part of Robinhood's flow.",m:"Central order book; contracts listed by the exchange",v:"Largest B2B deal in the sector, with Robinhood (US football, Sept. 2026)",f:"Valued at $5B when Robinhood took a stake (Sept. 2026); Crypto.com valued at $20B",x:"Launched February 3, 2026. Next targets futures and perpetuals."},
+"Novig":{d:"Low-fee peer-to-peer sports exchange that moved from the sweepstakes model to the federal framework.",r:"CFTC — DCM via Ludlow Exchange (June 2026)",m:"P2P order book, no house counterparty",v:"~2% of the volume tracked by DeFi Rate (Sept. 2026)",f:"$75M Series B at $500M (2026); new round targeted at ~$2B (Oct. 2026)",x:"Among the first sports DCMs approved in 2026, alongside ProphetX."},
+"ProphetX":{cr:"ProphetX — Dean Sisun and Jake Benzaquen",d:"Sports-only exchange with in-house clearing and RFQ-negotiated parlays between counterparties.",r:"CFTC — DCM + DCO (June 2026)",m:"Order book + RFQ mechanism for parlays",x:"Went live five days after approval, the fastest turnaround of the CFTC era."},
+"PredictIt":{d:"Long-running political market (2014) under an academic framework, with per-contract caps; no sports.",r:"CFTC — no-action letter (research framework)",m:"Order book, position caps",x:"The Aristotle exchange (DCM/DCO) was sold to Underdog in March 2026; PredictIt stays with Aristotle and operates as before."},
+"Sporttrade":{sn:"DCM application filed in early 2026",d:"Former state-licensed betting exchange moving to a federal sports exchange.",r:"CFTC — DCM under review",m:"Order-book sports exchange",x:"Other sports applications are also pending, including RSBIX."},
+"Hyperliquid — HIP-4 (Outcomes)":{d:"Outcome markets built into the HyperCore engine: same account and margin as perps, existing liquidity, and permissionless deployment for 500,000 staked HYPE.",r:"None (DeFi, global access)",ch:"Hyperliquid L1 (HyperCore); settled in USDC (USDH planned)",m:"On-chain order book, fully collateralized contracts with no leverage; resolved by validators on objective sources via 7 approved templates (prices, rate decisions)",v:"~$100M in the first full month; close to 1,000 markets tracked (Sept. 2026)",f:"No outside funding",x:"Announced February 2, 2026; mainnet May 2; multi-outcome May 7; permissionless at the end of August 2026. Fee-free until late August. First third-party deployer: Outcome."},
+"Coinbase Prediction Markets":{d:"Predictions inside the “everything exchange”, funded in USD or USDC; access to all Kalshi markets.",r:"Via Kalshi (DCM); Coinbase Financial Markets",ch:"Off-chain; USDC funding possible",m:"Routes to Kalshi; more venues announced",f:"Acquired The Clearing Company (founded by Toni Gemayel, ex-Polymarket and Kalshi) in late 2025",x:"Available in all 50 states since January 28, 2026."},
+"Gemini Predictions":{cr:"Gemini Space Station — Tyler and Cameron Winklevoss",d:"Its own exchange and a core strategic bet: Gemini left the UK, the EU and Australia to focus on US predictions; AI-personalized feed (Grok).",m:"Central order book",v:"$0.4M revenue and ~20,000 users in Q1 2026",f:"Listed company (Nasdaq: GEMI)",x:"Launched in mid-December 2025."},
+"Kraken":{sn:"Launch announced for 2026; no confirmed launch found as of Oct. 4",d:"Planned building block of Kraken's multi-asset strategy, alongside xStocks tokenized equities.",x:"Kraken is the official crypto exchange supporter of the 2026 World Cup."},
+"Robinhood Prediction Markets":{d:"Multi-venue hub that routes each contract to Kalshi, ForecastEx, Rothera (its joint venture) or OG.com depending on availability; huge retail customer base.",r:"FCM; Rothera exchange (JV with Susquehanna) DCM + DCO live since June 2026",m:"Smart routing across exchanges",v:"$156M in event contract revenue in Q2 2026; #2 US venue by regulated volume",f:"Listed (HOOD); stakes in Crypto.com and OG.com (Sept. 2026)",x:"Predictions are the group's fastest-growing segment, according to its CEO."},
+"Interactive Brokers — ForecastEx":{d:"Its own exchange focused on macro, economics and climate; IBKR also distributes Cboe Predicts contracts.",m:"Central order book",f:"Listed (IBKR)",x:"ForecastEx is one of the venues Robinhood routes to."},
+"Cboe Predicts":{d:"Binaries on the Mini-S&P 500 (XSP) under the listed-options regime, cleared by OCC: the only offering outside the CFTC.",r:"SEC (listed options), OCC clearing",m:"Fixed-payout binary options, plus a partial-payout “Plus Zone” variant",f:"Listed (CBOE)",x:"Launched June 23, 2026 on Interactive Brokers; Schwab and other brokers to follow."},
+"Charles Schwab":{sn:"Announced in June 2026 for “the coming months”",d:"Only objectively verifiable financial events (S&P 500): no sports, no politics.",r:"SEC (via Cboe)",m:"Distributes Cboe contracts",f:"Listed (SCHW)",x:"39.5M active accounts to distribute to if it launches."},
+"CME Group — event contracts":{d:"The largest derivatives exchange lists event contracts and supplies those of FanDuel Predicts.",m:"CME-listed contracts, order book",f:"Listed (CME)",x:"Exclusive partner of FanDuel (Flutter)."},
+"ICE (Intercontinental Exchange)":{cr:"Intercontinental Exchange (NYSE parent)",d:"No platform of its own: a major Polymarket shareholder and distributor of its data to institutions.",f:"~$1.6B position in Polymarket",x:"Shows large exchanges entering through data rather than trading."},
+"tastytrade":{d:"Prediction access for a client base of active options traders.",r:"Via a partner DCM",m:"Distribution",f:"IG Group subsidiary",x:"Launched in late July 2026, three days before IG announced the Underdog acquisition."},
+"Webull":{d:"Kalshi event contracts inside the retail brokerage app.",r:"Via Kalshi (DCM)",m:"Routes to Kalshi",f:"Listed (BULL)"},
+"Wealthsimple":{sn:"Partnership with Kalshi announced, launch to be confirmed",d:"Canadian gateway: around 4,000 Kalshi contracts for retail investors.",r:"Canada (via Kalshi)",m:"Routes to Kalshi"},
+"DraftKings Predictions":{d:"Its own exchange, DKeX (from the Railbird acquisition), built into the app; DraftKings also acts as market maker.",r:"CFTC — DCM (DKeX); NFA introducing broker",m:"Order book, with the group as market maker",v:"Volume per customer above sportsbook handle per customer (April 2026, JPMorgan)",f:"~$300M of prediction marketing planned for 2026",x:"Sports contracts are pulled in states where the DraftKings sportsbook operates. DKeX live since June 2026."},
+"FanDuel Predicts":{cr:"Flutter Entertainment (with CME Group)",d:"App separate from the sportsbook, contracts listed by CME; sports only where online sports betting isn't legal, and no politics.",r:"CFTC via CME; FanDuel Prediction Markets LLC (FCM)",m:"CME contracts; FanDuel is also a market maker",f:"~$300M of prediction marketing planned for 2026",x:"Launched in December 2025. Available in all 50 states and Puerto Rico."},
+"Fanatics Markets":{d:"Mainstream sports merchandise brand, with pricing and liquidity from CDNA (Crypto.com); acquiring an exchange and clearinghouse from BGC Group.",r:"NFA introducing broker (ex-Paragon); DCM via CDNA",m:"Distributes CDNA contracts",v:"Live in 23 states and 4 territories",f:"BGC exchange acquisition announced in July 2026",x:"World Cup partnership with ADI Predictstreet."},
+"Underdog Predict":{cr:"Underdog — Jeremy Levine (being acquired by IG Group)",d:"#3 US venue by regulated volume; its own exchange since July 18, 2026; mixes DFS and predictions in combos.",r:"CFTC — DCM + DCO (ex-Aristotle Exchange); FCM",m:"Order book and combos",v:"$466M net revenue over the 12 months to June 2026 (mostly DFS)",f:"Acquisition by IG Group for up to $1.3B (announced July 30, 2026)",x:"Previously relied on Crypto.com, then Kalshi."},
+"PrizePicks Predictions":{d:"Predictions inside the fantasy sports app; distributes third-party exchange contracts (Kalshi, Polymarket).",r:"NFA-registered FCM",m:"Distribution"},
+"Truth Predict":{sn:"In beta since February 2026, no broad launch",d:"Predictions built into the Truth Social network; “gems” earned on the platform convert into CRO.",r:"CFTC via CDNA (Crypto.com)",ch:"Off-chain; CRO",m:"Distributes CDNA contracts",f:"Listed (DJT)",x:"Announced October 28, 2025."},
+"Meta « Arena »":{n:"Meta “Arena”",sn:"Project reported by the New York Times (June 2026), not confirmed by Meta",d:"Standalone app that would draw on the Facebook and Instagram audience; likely points-based at first, real money not ruled out.",x:"Meta shut down an earlier forecasting app, Forecast, in 2022."},
+"predict.fun":{cr:"predict.fun (founder: dingaling) — backed by YZi Labs",d:"Yield-bearing collateral (deposited USDT is put to work on Venus) and distribution via Binance Wallet and Trust Wallet.",m:"Order book; taker fees charged at settlement",v:"$1.7B cumulative and 125,000 users (spring 2026); $579M taker volume in April",f:"YZi Labs increased its investment; acquired Probable (incubated by PancakeSwap) in March 2026",x:"Probable, launched by PancakeSwap and YZi Labs in late 2025 (zero fees, UMA oracle), is now part of predict.fun."},
+"Opinion (Opinion Labs)":{cr:"Opinion Labs — backed by YZi Labs",d:"Macro-first positioning (rates, commodities) rather than entertainment; AI-assisted resolution.",m:"Order book; AI-assisted oracle",v:"$3.1B cumulative notional in the 3 weeks after launch (Oct.–Nov. 2025); $376M taker volume in April 2026",f:"$20M pre-Series A (February 2026: Hack VC, Jump Crypto, Primitive Ventures)",x:"Mainnet launched October 24, 2025."},
+"Limitless":{d:"Ultra-short markets (minutes, hours) on crypto prices, settled on a Chainlink average rather than a spot print; the leading venue on Base.",m:"Order book + AMM; Chainlink oracle (TWAP)",v:"$205M taker volume in April 2026",x:"Zero maker fees."},
+"Myriad Markets":{cr:"Dastan (parent company of Decrypt)",d:"“Media-native” markets embedded in articles and apps; the first provider chosen by Trust Wallet.",m:"Order book + AMM; Chainlink oracles",v:"$100M cumulative volume and 400,000+ traders",f:"Backers: MoonPay Ventures, Tom Lee, ConsenSys, Hack VC"},
+"ADI Predictstreet":{cr:"Finstreet Ltd (IHC group, Abu Dhabi)",sn:"Limited geographic access; US pending licenses",d:"Official FIFA prediction market partner for the 2026 World Cup, plus a global deal with DAZN; ADI Chain rails and stablecoin.",r:"Gibraltar license",ch:"ADI Chain (institutional L2)",m:"On-chain markets settled in stablecoin",f:"Backed by IHC (Abu Dhabi)",x:"The DAZN partnership eventually includes a DAZN-branded stablecoin."},
+"SX Bet":{d:"On-chain sports exchange with the most complete developer tooling in the segment.",m:"P2P order book"},
+"Sport.fun":{d:"Tokenized fantasy sports: trade fractional shares of athletes, paid out on real-world performance.",m:"Athlete share market",v:"TVL ~$2.4M (DefiLlama)"},
+"Zeitgeist":{d:"Modular protocol for designing your own market structures, with on-chain governance.",m:"AMM and order book"},
+"Drift BET":{d:"Prediction markets attached to a Solana perps platform, with shared collateral.",m:"Drift order book",v:"Marginal activity; status to be verified"},
+"Augur (nouvelle plateforme)":{n:"Augur (new platform)",sn:"New platform announced, no date",d:"Pioneer of on-chain prediction markets (2015), now rebooting; a separate team is building a new platform.",f:"Augur treasury (REP)",x:"See also Augur Lituus under infrastructure."},
+"Binance Wallet — Prediction":{d:"One-tap access from the Binance app, sponsored gas and a keyless MPC wallet; aggregates third-party venues, starting with predict.fun.",r:"Region-dependent (not available everywhere)",m:"Front-end; liquidity and resolution from the underlying venue",x:"Launched April 9, 2026 after a beta in March."},
+"Jupiter Predict":{d:"Aggregates Kalshi and Polymarket on Solana, with limit orders; the only Polymarket venue on Solana.",r:"Blocked in the US and South Korea",m:"Aggregation; follows the source venue's resolution, and its fees stack on top of the venue's"},
+"Phantom Predictions":{d:"Tokenized Kalshi markets right on the wallet home screen, with chat between friends; funded in SOL or CASH.",r:"Via Kalshi",m:"Tokenized Kalshi positions",v:"Over 98% of DFlow volume went through Phantom (early 2026)"},
+"MetaMask Predictions":{d:"Native, exclusive Polymarket integration in MetaMask Mobile.",m:"Polymarket front-end",x:"Launched December 4, 2025."},
+"Trust Wallet Predictions":{cr:"Trust Wallet (Binance ecosystem)",d:"Multi-venue tab: Myriad, Polymarket (from 14 chains via MoonPay) and predict.fun, with no platform fee.",m:"Aggregation",v:"220M-user base"},
+"Byreal Predict":{cr:"Byreal (Bybit-incubated Solana DEX)",d:"Lets users trade Polymarket markets from Solana.",m:"Access to Polymarket markets"},
+"UMA (Optimistic Oracle)":{d:"Optimistic oracle that resolves Polymarket's event markets: a proposed answer becomes final unless disputed. Polymarket moved to the “Managed” version (Managed Optimistic Oracle V2), which restricts resolution proposals to a whitelist. Price markets now go through Chainlink and Pyth.",ch:"Ethereum and L2s (incl. Polygon)",m:"Proposal, dispute window, UMA holder vote",f:"UMA token",x:"Criticized during high-profile resolution disputes."},
+"Chainlink":{d:"Low-latency price feeds (Data Streams) and automated settlement triggers (Automation). Settles Polymarket's 5- and 15-minute crypto markets, as well as price markets on Limitless and Myriad.",m:"Pull oracle: a signed report is verified on-chain on demand; time-weighted averages (TWAP)",v:"Over $9B cumulative volume on Polymarket markets settled by Chainlink (per Chainlink, Aug. 2026)",f:"LINK token",x:"Partnership with Polymarket announced September 12, 2025, live on Polygon. The two teams said they would test Chainlink on more subjective questions to reduce reliance on social voting."},
+"Pyth Network":{cr:"Pyth Network, with Douro Labs (developer of Pyth Pro)",d:"First-party price oracle: prices come directly from market participants (trading firms, market makers). Settles Polymarket's daily markets on stocks, indices, gold, silver and oil, and publishes Kalshi's odds on-chain across 100+ chains.",ch:"Multichain (100+ chains, pull model)",m:"Prices aggregated from multiple publishers; Pyth Terminal shows the reference price used for settlement",v:"Network that has secured over $1.6T in cumulative value (per Pyth)",f:"PYTH token",x:"Kalshi joined Pyth as a data publisher on October 13, 2025: its market prices can be read on-chain. Polymarket integrated Pyth as a resolution source on April 2, 2026, alongside the launch of Pyth Terminal, for up/down and close markets on over a dozen US stocks and commodities."},
+"RedStone":{cr:"RedStone (RedStone Finance)",d:"Modular oracle that also delivers Kalshi's market data on-chain, across 110+ networks, in pull and push modes.",ch:"Multichain (110+ networks)",m:"Pull and push oracle; Kalshi data feeds",x:"Partnership with Kalshi announced October 23, 2025. At launch, three datasets: the New York City mayoral election, the 2028 Democratic nominee and the number of rate cuts in 2025. RedStone describes itself as one of Kalshi's oracle providers and the only one running a pull architecture across 110+ networks."},
+"Gnosis Conditional Tokens":{d:"Outcome token standard (CTF) underpinning Polymarket's settlement.",m:"ERC-1155 conditional tokens"},
+"DFlow":{d:"Tokenizes Kalshi contracts on Solana and powers Phantom.",m:"Tokenization of Kalshi positions",v:"Over 100,000 transactions in under a month after launch"},
+"Azuro":{d:"On-chain sports betting and prediction infrastructure powering 50+ apps.",ch:"Multichain (EVM)",m:"Shared liquidity pool",f:"AZUR token"},
+"Augur Lituus":{sn:"Migration test underway; no general launch date",d:"General-purpose oracle based on “algorithmic forks” to settle resolution disputes, designed as infrastructure for other platforms.",m:"Fork-based oracle",x:"Whitepaper published January 2026, relaunch announced July 2026."},
+"Agrégateurs de données (Oddpool, PolyRouter, PMXT)":{n:"Data aggregators (Oddpool, PolyRouter, PMXT)",cr:"Independent projects",d:"APIs that normalize data across venues (odds, order books, history) for traders and developers.",m:"Cross-venue data APIs",x:"PMXT is open source."},
+"Kairos":{d:"Cross-venue execution (REST and WebSocket) on top of aggregated data.",m:"Multi-venue order routing",x:"Maintains a public directory of nearly 290 tools."},
+"Stratium":{d:"Terminal showing Hyperliquid's HIP-4 outcome markets next to HIP-3 perps."},
+"Outcome":{d:"First third-party deployer of permissionless HIP-4 markets on Hyperliquid.",m:"Deployment via HIP-4 templates"},
+"Dome":{cr:"Dome (YC F25) → acquired by Polymarket",sn:"APIs shut down on April 28, 2026",d:"Unified multi-venue API (Polymarket, Kalshi), absorbed to strengthen Polymarket's developer ecosystem.",f:"$4.7M seed before the acquisition",x:"Acquired February 19, 2026."},
+"Fireplace":{sn:"Trading halted on August 15, 2026",d:"Social trading terminal; users migrated to Polymarket."}
+};
+
+/* ───────── Interface strings added by the redesign (labels only, no market data) ───────── */
+Object.assign(I18N.en, {
+  brand:"Prediction Markets Benchmark", issue:"October 2026", updated:"Updated 04 Oct 2026",
+  tracked:n=>`${n} players tracked`, h1a:"Who runs prediction markets", h1b:"in October 2026",
+  noteLabel:"Note", shareKicker:"Market share", snapKicker:"Market snapshot", benchKicker:"Benchmark",
+  benchTitle:(n,c)=>`${n} players across ${c} categories`, methodKicker:"Methodology & sources",
+  context:"Context", themeDark:"Switch to dark theme", themeLight:"Switch to light theme",
+  clearSearch:"Clear search", sortLabel:"Sort by", sortPrefix:"Sort: ", viewRow:"view in table", unit:"players",
+  thWeightShort:"Weight", thCreatorShort:"Creator / parent", thRegShort:"Regulation", thChainShort:"Chain / rails",
+  thVolShort:"Volume, traction", thFundShort:"Funding",
+  regTag:{cftc:"CFTC",sec:"SEC",offshore:"Offshore",defi:"DeFi"}
+});
+Object.assign(I18N.fr, {
+  brand:"Benchmark des marchés prédictifs", issue:"Octobre 2026", updated:"Mis à jour le 04 oct. 2026",
+  tracked:n=>`${n} acteurs suivis`, h1a:"Qui fait les marchés prédictifs", h1b:"en octobre 2026",
+  noteLabel:"Note", shareKicker:"Parts de marché", snapKicker:"Instantané du marché", benchKicker:"Benchmark",
+  benchTitle:(n,c)=>`${n} acteurs répartis en ${c} catégories`, methodKicker:"Méthodologie & sources",
+  context:"Contexte", themeDark:"Passer au thème sombre", themeLight:"Passer au thème clair",
+  clearSearch:"Effacer la recherche", sortLabel:"Trier par", sortPrefix:"Tri : ", viewRow:"voir dans le tableau", unit:"acteurs",
+  thWeightShort:"Poids", thCreatorShort:"Créateur / maison-mère", thRegShort:"Régulation", thChainShort:"Chaîne / rails",
+  thVolShort:"Volume, traction", thFundShort:"Levées",
+  regTag:{cftc:"CFTC",sec:"SEC",offshore:"Offshore",defi:"DeFi"}
+});
+
+/* Presentation helpers derived from figures already shown on the page */
+const SHARE = [
+  {n:"Kalshi", l:"Kalshi", p:80},
+  {n:"Polymarket US", l:"Polymarket US", p:12},
+  {n:"Polymarket (International)", l:"Polymarket International", p:6},
+  {n:"Novig", l:"Novig", p:2}
+];
+const VALO_SCALE = [40, 21, 5, 2, 1.3];
+const SORT_KEYS = [["weight","thWeight"],["name","thName"],["status","thStatus"],["creator","thCreator"],["reg","thReg"],["chain","thChain"]];
+const FIG = {
+  en:/[~≈]?\$\d[\d,]*(?:\.\d+)?(?:\s?[BMK]\b)?|[~≈]?\d+(?:\.\d+)?(?:–\d+)?%/g,
+  fr:/[~≈]?\d{1,3}(?:[   ]\d{3})*(?:,\d+)?\s?(?:Md|M|k)?\$|[~≈]?\d+(?:,\d+)?\s?%/g
+};
+const ICON = {
+  chev:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 2.5 3.5 3.5-3.5 3.5"/></svg>',
+  out:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9 9 3M4.2 3H9v4.8"/></svg>',
+  none:'<svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m18 18 6.5 6.5M9 12h6"/></svg>'
+};
+
+const FIELDS = ["n","cr","d","r","ch","m","v","f","x","sn"];
+const REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id);
+
+function getLang(){
+  try{ const p = new URLSearchParams(location.search).get("lang"); if(p==="fr"||p==="en") return p; }catch(e){}
+  try{ const s = localStorage.getItem("pm-bench-lang"); if(s==="fr"||s==="en") return s; }catch(e){}
+  return "en";
+}
+const state = {lang:getLang(), cat:"", status:"", reg:"", q:"", sortK:"weight", sortDir:-1, open:new Set()};
+const T = () => I18N[state.lang];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const ID = r => norm(r.n).replace(/[^a-z0-9]+/g,"-");
+const BYID = {}; D.forEach(r => BYID[ID(r)] = r);
+function L(r,k){
+  if(state.lang==="fr") return r[k];
+  const e = EN[r.n] || {};
+  if(e[k] !== undefined) return e[k];
+  return GEN[r[k]] ?? r[k];
+}
+
+/* Cross-fade a state change when the browser can, otherwise apply it directly */
+function swap(fn){
+  if(REDUCED || !document.startViewTransition) return fn();
+  const vt = document.startViewTransition(fn), quiet = () => {};
+  vt.ready.catch(quiet); vt.finished.catch(quiet);
+}
+
+/* ───────── Cell renderers ───────── */
+const BLANK = new Set(["n.d.","n/a","—",""]);
+const cell = v => BLANK.has(v ?? "") ? `<span class="nd">${esc(v||"—")}</span>` : esc(v);
+const figs = v => BLANK.has(v ?? "") ? `<span class="nd">${esc(v||"—")}</span>` : esc(v).replace(FIG[state.lang], m => `<b>${m}</b>`);
+const statusMark = s => `<span class="st st-${s}"><i></i>${esc(T().status[s])}</span>`;
+const units = w => `<span class="units" aria-hidden="true">${[1,2,3,4,5].map(i => `<i class="${i<=w?"on":""}" style="--i:${i}"></i>`).join("")}</span>`;
+
+/* ───────── Static content ───────── */
+function applyStatic(){
+  const t = T();
+  document.documentElement.lang = state.lang;
+  document.title = t.title;
+  document.querySelectorAll("[data-i18n]").forEach(el => { const v = t[el.dataset.i18n]; if(typeof v === "string") el.textContent = v; });
+  $("lang").setAttribute("aria-label", t.langLabel);
+  $("lang").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.l===state.lang));
+  syncThemeLabel();
+  $("tracked").textContent = t.tracked(D.length);
+  $("benchTitle").textContent = t.benchTitle(D.length, Object.keys(t.cats).length);
+
+  // Market share
+  const pct = [...t.pct, t.novig.replace(/^Novig\s*/,"")];
+  $("bar").setAttribute("aria-label", t.barLabel);
+  $("bar").innerHTML = SHARE.map((s,i) => `<span class="seg" data-i="${i}" style="flex-grow:${s.p};--i:${i}"></span>`).join("");
+  $("legend").innerHTML = SHARE.map((s,i) => {
+    const m = pct[i].match(/^([\d.,]+)(\s*%)$/) || [0,pct[i],""];
+    return `<li><button type="button" class="lg" data-i="${i}" aria-label="${esc(s.l)} ${esc(pct[i])} — ${esc(t.viewRow)}">
+      <span class="lg-name"><i></i>${esc(s.l)}</span><span class="lg-val">${esc(m[1])}<small>%</small></span></button></li>`;
+  }).join("");
+  SHARE.forEach((s,i) => s.pct = pct[i]);
+
+  // Snapshot
+  $("valos").innerHTML = t.valos.map(([b,s],i) => {
+    const cut = s.indexOf(", "), name = cut<0 ? s : s.slice(0,cut), ctx = cut<0 ? "" : s.slice(cut+2);
+    return `<li><span class="snap-v">${esc(b)}</span>
+      <span class="meter${b.startsWith("~")?" est":""}" aria-hidden="true"><i style="--w:${(VALO_SCALE[i]/VALO_SCALE[0]*100).toFixed(1)}%;--i:${i}"></i></span>
+      <span class="snap-n">${esc(name)}</span><span class="snap-c">${esc(ctx)}</span></li>`;
+  }).join("");
+
+  // Market reading
+  const ins = (h,p,i,cls) => `<article class="ins ${cls}" data-reveal style="--d:${i*70}ms"><span class="ins-n">0${i+1}</span><h3>${esc(h)}</h3><p>${esc(p)}</p></article>`;
+  $("reading").innerHTML = ins(t.reading[0][0], t.reading[0][1], 0, "ins-lead") +
+    `<div>${t.reading.slice(1).map(([h,p],i) => ins(h,p,i+1,"ins-row")).join("")}</div>`;
+
+  // Command bar
+  const q = $("q"); q.placeholder = t.search; q.setAttribute("aria-label", t.searchLabel);
+  $("qclear").setAttribute("aria-label", t.clearSearch);
+  const opts = (all,o) => `<option value="">${esc(all)}</option>` + Object.entries(o).map(([k,v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  const fs = $("fstatus"); fs.setAttribute("aria-label", t.statusLabel); fs.innerHTML = opts(t.statusAll, t.statusOpts); fs.value = state.status;
+  const fr = $("freg"); fr.setAttribute("aria-label", t.regLabel); fr.innerHTML = opts(t.regAll, t.regOpts); fr.value = state.reg;
+  const so = $("fsort"); so.setAttribute("aria-label", t.sortLabel);
+  so.innerHTML = SORT_KEYS.map(([k,l]) => `<option value="${k}">${esc(t.sortPrefix + t[l])}</option>`).join(""); so.value = state.sortK;
+
+  // Methodology
+  $("legendweight").innerHTML = [5,4,3,2,1].map(w => `<li>${units(w)}${esc(t.weight[w])}</li>`).join("");
+  $("legendstatus").innerHTML = Object.keys(t.status).map(k => `<li>${statusMark(k)}</li>`).join("");
+  $("sources").innerHTML = t.sources.map((s,i) => {
+    const cut = s.indexOf(" — "), pub = cut<0 ? s : s.slice(0,cut), desc = cut<0 ? "" : s.slice(cut+3);
+    let host = ""; try{ host = new URL(SOURCE_URLS[i]).hostname.replace(/^www\./,""); }catch(e){}
+    return `<li><a href="${SOURCE_URLS[i]}" target="_blank" rel="noopener"><span class="src-i">${String(i+1).padStart(2,"0")}</span>
+      <span><span class="src-p">${esc(pub)}</span><span class="src-d">${esc(desc)}</span><span class="src-h">${esc(host)}</span></span>${ICON.out}</a></li>`;
+  }).join("");
+  observe();
+}
+
+function renderCats(){
+  const t = T(), box = $("cats"), counts = {};
+  box.setAttribute("aria-label", t.catsLabel);
+  D.forEach(r => counts[r.c] = (counts[r.c]||0)+1);
+  const items = [["", t.all, D.length], ...Object.entries(t.cats).map(([k,v]) => [k, v, counts[k]||0])];
+  box.innerHTML = items.map(([k,l,n]) => `<button type="button" class="tab" data-c="${k}" aria-pressed="${state.cat===k}">${esc(l)} <em>${n}</em></button>`).join("");
+}
+function syncCats(){
+  $("cats").querySelectorAll(".tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.c===state.cat));
+}
+
+/* ───────── Table ───────── */
+function val(r,k){
+  if(k==="status") return STATUS_META[r.s][1];
+  if(k==="weight") return r.w;
+  const map = {name:"n",creator:"cr",reg:"r",chain:"ch"};
+  return norm(L(r,map[k]));
+}
+
+function detailHTML(r, open){
+  const t = T(), id = ID(r), name = L(r,"n"), sn = L(r,"sn"), x = L(r,"x");
+  const fact = (label, html) => `<div><dt class="label">${esc(label)}</dt><dd>${html}</dd></div>`;
+  return `<tr class="detail" id="d-${id}"><td colspan="8"><div class="dwrap${open?" open":""}"><div class="dinner"><div class="dgrid">
+    <div>
+      <p class="label">${esc(t.thDiff)}</p>
+      <p class="d-lead">${esc(L(r,"d"))}</p>
+      <div class="d-ctx"><p class="label">${esc(t.context)}</p><p>${x?esc(x):esc(t.noMore)}</p></div>
+      ${r.u?`<a class="visit" href="${esc(r.u)}" target="_blank" rel="noopener">${ICON.out}${esc(t.open(name))}</a>`:""}
+    </div>
+    <dl class="facts">
+      ${fact(t.thStatus, statusMark(r.s) + (sn?`<span class="snote" style="display:block">${esc(sn)}</span>`:""))}
+      ${fact(t.thCreator, esc(L(r,"cr")))}
+      ${fact(t.thReg, esc(L(r,"r")))}
+      ${fact(t.thChain, cell(L(r,"ch")))}
+      ${fact(t.thModel, cell(L(r,"m")))}
+      ${fact(t.thVol, figs(L(r,"v")))}
+      ${fact(t.thFund, figs(L(r,"f")))}
+    </dl>
+  </div></div></div></td></tr>`;
+}
+
+function render(animate){
+  const t = T(), q = norm(state.q);
+  let rows = D.filter(r =>
+    (!state.cat || r.c===state.cat) && (!state.status || r.s===state.status) && (!state.reg || r.rg===state.reg) &&
+    (!q || norm(FIELDS.map(k => L(r,k)).concat([t.cats[r.c], r.n]).join(" ")).includes(q))
+  );
+  rows.sort((a,b) => {
+    const va = val(a,state.sortK), vb = val(b,state.sortK);
+    if(va<vb) return -1*state.sortDir; if(va>vb) return state.sortDir;
+    return b.w - a.w || norm(a.n).localeCompare(norm(b.n));
+  });
+  document.querySelectorAll("thead th[data-k]").forEach(th => {
+    const on = th.dataset.k===state.sortK;
+    th.setAttribute("aria-sort", on ? (state.sortDir===1?"ascending":"descending") : "none");
+  });
+  $("fsort").value = state.sortK;
+  $("count").textContent = t.count(rows.length, D.length);
+  $("countv").innerHTML = `<b>${rows.length}</b> / ${D.length} ${esc(t.unit)}`;
+  $("fstatus").parentElement.classList.toggle("on", !!state.status);
+  $("freg").parentElement.classList.toggle("on", !!state.reg);
+  $("searchbox").classList.toggle("has", !!state.q);
+  $("reset").classList.toggle("on", !!(state.cat || state.status || state.reg || state.q));
+
+  const tb = $("tb");
+  if(animate && !REDUCED){ tb.classList.remove("swap"); void tb.offsetWidth; tb.classList.add("swap"); }
+  if(!rows.length){
+    tb.innerHTML = `<tr class="none"><td colspan="8"><div class="empty">${ICON.none}<p>${esc(t.empty)}</p><button type="button" id="clr">${esc(t.clear)}</button></div></td></tr>`;
+    $("clr").addEventListener("click", resetAll);
+    return;
+  }
+  tb.innerHTML = rows.map(r => {
+    const id = ID(r), open = state.open.has(id), sn = L(r,"sn"), tag = t.regTag[r.rg];
+    return `<tr class="main${open?" is-open":""}" data-id="${id}">
+      <td class="c-name"><button type="button" class="rowbtn" aria-expanded="${open}" aria-controls="d-${id}">${ICON.chev}<span>${esc(L(r,"n"))}</span></button><span class="cattag">${esc(t.cats[r.c])}</span></td>
+      <td class="c-status">${statusMark(r.s)}${sn?`<span class="snote clamp">${esc(sn)}</span>`:""}</td>
+      <td class="c-weight">${units(r.w)}<span class="wlabel">${esc(t.weight[r.w])}</span></td>
+      <td class="c-creator"><span class="clamp">${esc(L(r,"cr"))}</span></td>
+      <td class="c-reg">${tag?`<span class="rtag">${esc(tag)}</span>`:""}<span class="clamp">${esc(L(r,"r"))}</span></td>
+      <td class="c-chain"><span class="clamp">${cell(L(r,"ch"))}</span></td>
+      <td class="c-vol"><span class="clamp figs">${figs(L(r,"v"))}</span></td>
+      <td class="c-fund"><span class="clamp figs">${figs(L(r,"f"))}</span></td>
+    </tr>` + (open ? detailHTML(r,true) : "");
+  }).join("");
+}
+
+function toggle(tr){
+  const id = tr.dataset.id, r = BYID[id], btn = tr.querySelector(".rowbtn");
+  let d = $("d-"+id);
+  if(state.open.has(id)){
+    state.open.delete(id); tr.classList.remove("is-open"); btn.setAttribute("aria-expanded","false");
+    if(!d) return;
+    const w = d.querySelector(".dwrap"), done = () => d.remove();
+    if(REDUCED) return done();
+    w.classList.remove("open");
+    w.addEventListener("transitionend", e => { if(e.target===w) done(); });
+    setTimeout(done, 520);
+  } else {
+    state.open.add(id); tr.classList.add("is-open"); btn.setAttribute("aria-expanded","true");
+    if(d) d.remove();
+    tr.insertAdjacentHTML("afterend", detailHTML(r, REDUCED));
+    if(REDUCED) return;
+    const w = tr.nextElementSibling.querySelector(".dwrap");
+    void w.offsetHeight; w.classList.add("open");
+  }
+}
+
+function jumpTo(name){
+  const r = D.find(x => x.n===name); if(!r) return;
+  const id = ID(r);
+  state.cat=""; state.status=""; state.reg=""; state.q=""; $("q").value="";
+  $("fstatus").value=""; $("freg").value="";
+  state.open.add(id); syncCats(); render();
+  const tr = $("tb").querySelector(`tr[data-id="${id}"]`); if(!tr) return;
+  tr.scrollIntoView({block:"center", behavior: REDUCED ? "auto" : "smooth"});
+  tr.querySelector(".rowbtn").focus({preventScroll:true});
+}
+
+function setSort(k){
+  if(state.sortK===k) state.sortDir *= -1; else { state.sortK=k; state.sortDir = (k==="weight") ? -1 : 1; }
+  render(true);
+}
+function resetAll(){
+  state.cat=""; state.status=""; state.reg=""; state.q="";
+  $("q").value=""; $("fstatus").value=""; $("freg").value="";
+  syncCats(); render(true);
+}
+function setLang(l){
+  if(l===state.lang) return;
+  swap(() => {
+    state.lang = l;
+    try{ localStorage.setItem("pm-bench-lang", l); }catch(e){}
+    applyStatic(); renderCats(); render();
+  });
+}
+
+/* ───────── Theme ───────── */
+const root = document.documentElement;
+function syncThemeLabel(){
+  const t = T(), label = root.dataset.theme==="dark" ? t.themeLight : t.themeDark;
+  $("theme").setAttribute("aria-label", label); $("theme").title = label;
+}
+$("theme").addEventListener("click", () => {
+  const next = root.dataset.theme==="dark" ? "light" : "dark";
+  swap(() => { root.dataset.theme = next; syncThemeLabel(); });
+  try{ localStorage.setItem("pm-bench-theme", next); }catch(e){}
+});
+if(window.matchMedia){
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+    let saved; try{ saved = localStorage.getItem("pm-bench-theme"); }catch(err){}
+    if(saved!=="light" && saved!=="dark"){ root.dataset.theme = e.matches ? "dark" : "light"; syncThemeLabel(); }
+  });
+}
+
+/* ───────── Market share interactions ───────── */
+(function(){
+  const share = $("share"), tip = $("tip");
+  function show(i){
+    const s = SHARE[i], row = D.find(x => x.n===s.n), seg = share.querySelector(`.seg[data-i="${i}"]`);
+    if(!seg) return;
+    share.dataset.active = i;
+    tip.innerHTML = `<b>${esc(s.l)}<span>${esc(s.pct)}</span></b>${row?`<p>${esc(L(row,"v"))}</p>`:""}`;
+    const b = share.getBoundingClientRect(), g = seg.getBoundingClientRect();
+    const x = Math.max(4, Math.min(g.left - b.left + g.width/2 - tip.offsetWidth/2, b.width - tip.offsetWidth - 4));
+    tip.style.left = x + "px"; tip.style.top = (g.top - b.top - tip.offsetHeight - 10) + "px";
+    tip.classList.add("on");
+  }
+  function hide(){ delete share.dataset.active; tip.classList.remove("on"); }
+  const hit = e => e.target.closest(".seg,.lg");
+  share.addEventListener("mouseover", e => { const el = hit(e); if(el) show(+el.dataset.i); });
+  share.addEventListener("mouseout", e => { if(hit(e) && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".seg,.lg"))) hide(); });
+  share.addEventListener("focusin", e => { const el = hit(e); if(el) show(+el.dataset.i); });
+  share.addEventListener("focusout", hide);
+  share.addEventListener("click", e => { const el = hit(e); if(el){ hide(); jumpTo(SHARE[+el.dataset.i].n); } });
+})();
+
+/* ───────── Reveal on scroll ───────── */
+let io = null;
+function observe(){
+  const els = document.querySelectorAll("[data-reveal]:not(.in), .share:not(.in), .snap:not(.in)");
+  if(REDUCED || !("IntersectionObserver" in window)){ els.forEach(el => el.classList.add("in")); return; }
+  if(!io) io = new IntersectionObserver(entries => entries.forEach(en => {
+    if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+  }), {rootMargin:"0px 0px -6% 0px"});
+  els.forEach(el => io.observe(el));
+}
+
+/* ───────── Events ───────── */
+document.querySelectorAll("thead th[data-k] button").forEach(b => b.addEventListener("click", () => setSort(b.parentElement.dataset.k)));
+$("fsort").addEventListener("change", e => { state.sortK = e.target.value; state.sortDir = (state.sortK==="weight") ? -1 : 1; render(true); });
+$("lang").addEventListener("click", e => { const b = e.target.closest("button[data-l]"); if(b) setLang(b.dataset.l); });
+$("cats").addEventListener("click", e => { const b = e.target.closest(".tab"); if(!b) return; state.cat = b.dataset.c; syncCats(); render(true); });
+$("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+$("q").addEventListener("keydown", e => { if(e.key==="Escape"){ if(state.q){ e.target.value=""; state.q=""; render(); } else e.target.blur(); } });
+$("qclear").addEventListener("click", () => { $("q").value=""; state.q=""; render(); $("q").focus(); });
+$("fstatus").addEventListener("change", e => { state.status = e.target.value; render(true); });
+$("freg").addEventListener("change", e => { state.reg = e.target.value; render(true); });
+$("reset").addEventListener("click", resetAll);
+$("tb").addEventListener("click", e => {
+  if(e.target.closest("a")) return;
+  const tr = e.target.closest("tr.main"); if(tr) toggle(tr);
+});
+$("tb").addEventListener("animationend", e => { if(e.target.closest("tr.main") && e.animationName==="rowIn") $("tb").classList.remove("swap"); });
+document.addEventListener("keydown", e => {
+  if(e.key!=="/" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const a = document.activeElement;
+  if(a && (a.tagName==="INPUT" || a.tagName==="SELECT" || a.tagName==="TEXTAREA" || a.isContentEditable)) return;
+  e.preventDefault(); $("q").focus(); $("q").select();
+});
+
+/* Sticky table header sits right under the command bar, whatever its height */
+(function(){
+  const cmd = $("cmd"), set = () => root.style.setProperty("--cmd-h", (getComputedStyle(cmd).position==="sticky" ? cmd.offsetHeight : 0) + "px");
+  if("ResizeObserver" in window) new ResizeObserver(set).observe(cmd);
+  window.addEventListener("resize", set); set();
+})();
+
+applyStatic(); renderCats(); render();
+setTimeout(() => $("tb").classList.remove("intro"), 1600);
+</script>
+</body>
+</html>
